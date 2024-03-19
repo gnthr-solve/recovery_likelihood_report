@@ -1,0 +1,62 @@
+\section{Introduction}
+
+Energy based models are widely used in statistical learning and can also be found as elegant models of spatial interactions in point process models. 
+However, maximum likelihood (ML) based inference usually remains challenging due to the difficulty in approximating the partition function using Markov Chain Monte Carlo (MCMC) for high- dimensional multimodal distributions.
+
+Following the work of (), the goal of this project is to explore the efficacy and efficiency of recovery likelihood estimation in learning parametrised models.
+The RL approach is based on applying Gaussian noise to the training data and subsequently using the conditional instead of the marginal distribution.
+We will shown that this approach yields an unbiased estimator of the underlying parameters and investigate the MCMC sampling properties. 
+
+As the inference process depends on many components and hyperparameters, comparing these estimators empirically is necessarily not comprehensive.
+Depending on the training data, the model used, the sampling approach and components like the optimiser, the results might be different.
+Thus a large part of this project was dedicated to develop a general code framework that allows for more systematic testing in a setting of interest.
+
+Gao and Song have shown that RL produces good results and computational savings in the context of image generation.
+In that context and many others the models are typically some variety of neural networks.
+For neural network architectures the concrete values of the weights and biases are less significant, 
+and two architectures with fundamentally different parameter values can still produce similar distributions.
+In this project the emphasis is on parametric models whose parameters carry a direct meaning or function as the basis for further analysis.
+For such models it is not just important that the resulting distribution coincides with the data distribution, 
+but also that the parameters themselves are estimated accurately.
+The later comparisons will hence focus primarily on how well the estimated parameters match the distribution parameters.
+
+\subsection{Problem Formulation}
+The problem that is investigated in statistical learning of generative models looks like this:
+We have a dataset $\mathcal{D} = (\bm{x}_i)_{i = 1}^n \subseteq \mathbb{R}^d$ from an unknown distribution of a random vector $\bm{X} : \Omega \to \mathbb{R}^d$,
+with some probability density function $p : \mathbb{R}^d \to \mathbb{R}$.
+We want to use the data to approximate this density function with a parametrised model density function $p_{\bm{\theta}}: \mathbb{R}^d \to \mathbb{R}$,
+for a vector of parameters $\bm{\theta} \in \mathbb{R}^m$, by estimating an optimal $\hat{\bm{\theta}}$ such that $p_{ \hat{\bm{\theta}} }$ is close to $p$.
+
+
+\subsection{Approaches}
+For high dimensional multimodal problems and complicated target densities $p$ estimating $\hat{\bm{\theta}}$ is a highly non-trivial task, 
+where the standard ML inference can be computationally infeasible.
+Complicating the problem further is that the model distributions need to be sufficiently complex to be able to resemble the target distribution and thus even the model
+density is often only determined by its probability kernel, as the normalisation constant is not available analytically and costly to calculate numerically.
+
+There are various approaches that attempt to make this inference problem tractable, such as 
+
+\begin{comment}
+\\
+Denoising Diffusion Probabilistic Models
+
+\\
+Score Matching: 
+(Estimation of Non-Normalized Statistical Models by Score Matching, Aapo Hyvarinen 2005)
+- always at least locally consistent
+-the model pdf needs to be smooth enough
+
+\\
+Pseudo-Likelihood Estimation: 
+(Besag, Spatial interaction and the statistical analysis of lattice systems. Journal of the Royal Statistical Society, Series B, 36(2):192–236, 1974)
+However, the conditional probabilities in (13) are not necessarily readily available and need to be computed. In particular, these conditional densities need to be normalized. The computational burden needed in the normalization is reduced from the original problem since we only need to numerically compute n one-dimensional integrals which is far more feasible than a single n-dimensional integral. However, compared to score matching, this is a computationally expensive method since score matching avoids the need for numerical integration altogether.
+The question of consistency of pseudo-likelihood estimation seems to be unclear (in general).
+
+\\
+Contrastive Divergence (Hinton Training products of experts by minimizing contrastive divergence. Neural Computation, 14(8):1771–1800, 2002.)
+he basic principle is to use an MCMC method for computing the derivative of the logarithm of the normalization factor Z, but the MCMC is allowed to run for only a single iteration (or a few iterations) before doing the gradient step.
+- generally biased, even asymptotically
+-much more general method than score matching since it is applicable to intractable latent variable models.
+-can also handle binary/discrete variables
+
+\end{comment}

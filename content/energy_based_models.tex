@@ -1,0 +1,114 @@
+
+
+\begin{comment}
+Let $\bm{x} \sim p_{\text{data}}(\bm{x})$ denote a training example, and $p_{\bm{\theta}}(\bm{x})$ denote a model’s probability density function 
+that aims to approximates $p_{\text{data}}(\bm{x})$. 
+\end{comment}
+
+
+\section{Energy Based Models}
+
+For a function $U_{\bm{\theta}} : \mathbb{R}^d \to \mathbb{R}$, also called (potential) energy functional, an energy-based model (EBM) is defined as:
+
+\[
+	p_{\bm{\theta}} (\bm{x}) = \frac{1}{ Z_{\bm{\theta}} } \exp( - U_{\bm{\theta}} (\bm{x}) )
+\]
+
+where $Z_{\bm{\theta}} = \int \exp( - U_{\bm{\theta}} (\bm{x}) ) \dif \bm{x}$ is the partition function which is analytically intractable for high dimensional $\bm{x}$.
+
+
+
+\subsection{Tranformation}
+Any standard distribution for a random variable or vector $\bm{X} : \Omega \to \mathbb{R}^d$ with a continuous density $f_{\bm{X}}$ can be transformed into an EBM.
+For this, an analytical representation of the probability kernel $K_{\bm{X}}$ of the distribution, i.e. the un-normalised version of the density, is already sufficient, 
+making it an excellent tool for Bayesian models where the normalisation constant of the posterior is typically analytically unavailable or intractable.
+Given the kernel we can set 
+\[
+	U(\bm{x}) = - \log K_{\bm{X}} (\bm{x}),
+\]
+
+which reproduces the desired density when substituted in the EBMs density form:
+
+\[
+\begin{aligned}
+	p (\bm{x}) &= \frac{1}{ Z } \exp( - U(\bm{x}) ) \\
+	&= \frac{1}{ \int \exp( - U (\bm{x}) ) \dif \bm{x} } \exp( - U(\bm{x}) ) \\
+	&= \frac{1}{ \int \exp( \log K_{\bm{X}} (\bm{x}) ) \dif \bm{x} } \exp( \log K_{\bm{X}} (\bm{x}) ) \\
+	&= \frac{1}{ \int K_{\bm{X}} (\bm{x}) \dif \bm{x} } K_{\bm{X}} (\bm{x}) \\
+	&= f_{\bm{X}} (\bm{x}) \\
+\end{aligned}
+\]
+
+We might not have an analytical representation for density or kernel but only a way of calculating the density value.
+For analytical consideration it is helpful to be able to still have a representation for the energy functional.
+We know that for a model with parameterised density $p_{\bm{\theta}}$ we have
+\[
+\begin{aligned}
+	- \log p_{\bm{\theta}} (\bm{x}) 
+	&= - \log \frac{ K_{\bm{\theta}} (\bm{x}) }{ Z_{\bm{\theta}} } \\
+	&= - \log K_{\bm{\theta}} (\bm{x}) + \log Z_{\bm{\theta}}  \\
+\end{aligned}
+\]
+
+so we can represent the energy functional as
+\[
+	U_{\bm{\theta}} (\bm{x}) = - \log p_{\bm{\theta}} (\bm{x}) - \log Z_{\bm{\theta}}
+\]
+
+
+
+\subsection{Differentiating}
+For sampling and estimation we will have to differentiate the energy functional of a model by both the input $\bm{x}$ and by the parameter vector $\bm{\theta}$.
+
+In general, for a function $f : \mathbb{R}^d \to \mathbb{R}$ we have by the chain rule that
+\[
+	\nabla_{\bm{x}} (- \log f(\bm{x}) ) = - \frac{ 1 }{ f(\bm{x}) } \nabla_{\bm{x}} f(\bm{x}) = - \frac{ \nabla_{\bm{x}} f(\bm{x}) }{ f(\bm{x}) } 
+\]
+
+so for a model were we have the kernel analytically the derivative with respect to $\bm{x}$ is
+\[
+\begin{aligned}
+	\nabla_{\bm{x}} U_{\bm{\theta}} (\bm{x})
+	&= \nabla_{\bm{x}} ( - \log K_{\bm{\theta}} (\bm{x}) ) \\
+	&= - \frac{ \nabla_{\bm{x}} K_{\bm{\theta}} (\bm{x}) }{ K_{\bm{\theta}} (\bm{x}) }   \\
+\end{aligned}
+\]
+
+and analogously for $\bm{\theta}$:
+\[
+	\nabla_{\bm{\theta}} U_{\bm{\theta}} (\bm{x}) = - \frac{ \nabla_{\bm{\theta}} K_{\bm{\theta}} (\bm{x}) }{ K_{\bm{\theta}} (\bm{x}) }.
+\]
+
+In the other case where we don't have the kernel explicitly the calculation is similar with respect to $\bm{x}$ as the normalisation constant falls away
+\[
+\begin{aligned}
+	\nabla_{\bm{x}} U_{\bm{\theta}} (\bm{x})
+	&= \nabla_{\bm{x}} ( - \log p_{\bm{\theta}} (\bm{x}) - \log Z_{\bm{\theta}} ) \\
+	&=  - \nabla_{\bm{x}} \log p_{\bm{\theta}} (\bm{x}) - \nabla_{\bm{x}} \log Z_{\bm{\theta}} \\
+	&= - \frac{ \nabla_{\bm{x}} p_{\bm{\theta}} (\bm{x}) }{ p_{\bm{\theta}} (\bm{x}) }  \\
+\end{aligned}
+\]
+
+but more difficult when differentiating with respect to $\bm{\theta}$ as $Z_{\bm{\theta}}$ is a function of it.
+\[
+\begin{aligned}
+	\nabla_{\bm{\theta}} U_{\bm{\theta}} (\bm{x})
+	&= \nabla_{\bm{\theta}} ( - \log p_{\bm{\theta}} (\bm{x}) - \log Z_{\bm{\theta}} ) \\
+	&=  - \nabla_{\bm{\theta}} \log p_{\bm{\theta}} (\bm{x}) - \nabla_{\bm{\theta}} \log Z_{\bm{\theta}} \\
+	&= - \frac{ \nabla_{\bm{\theta}} p_{\bm{\theta}} (\bm{x}) }{ p_{\bm{\theta}} (\bm{x}) } - \frac{ \nabla_{\bm{\theta}} Z_{\bm{\theta}} }{ Z_{\bm{\theta}} }\\
+\end{aligned}
+\]
+
+
+
+
+
+
+
+
+
+
+
+
+
+

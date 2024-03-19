@@ -1,0 +1,89 @@
+
+\section{Metrics}
+
+Recovery Likelihood promises an improvement in convergence speed by accelerating the calculation of the likelihood gradient.
+Does this improvement come at the cost of quality, reliability or increased maintenance?
+What would we like to have:
+\begin{enumerate}
+	\item Accurate parameter estimates
+	\item A sufficiently close parametric representation/model for the data distribution
+	\item Consistent quality in training
+	\item Independence of the model
+	\item Straightforward parameter choice and low dependency for perturbation 
+\end{enumerate}
+
+Comparing the likelihood approaches and the involved samplers in a rigorous way requires some measure 
+of both the quality of the final estimates and the reliability of the approach.
+
+
+\subsection{Metrics for Estimated Parameters}
+For comparing the quality of the estimates we can look for one at metrics of the distance between the known parameters and the estimated parameters.
+This gives a measure of how good the respective approach is at estimating the parameters accurately and would be specifically important in contexts, 
+where the parameters have a specific meaning and the estimates are meant to be interpretable.
+For this vector norms from the $p$-norm family or matrix norms like the operator- or Frobenius-norm are suitable.
+
+
+
+
+
+
+\begin{comment}
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+\subsection{Metrics for Estimated Model}
+On the other hand we can judge the quality of the estimates based on how closely the parametrised distribution resembles the target distribution.
+This approach is particularly useful if there is no assumption that the underlying distribution can be represented by a parametric model, 
+or when the actual parameter estimates are less important than the practical use of the model.
+Especially for neural network models this is the appropriate approach as typically the weights themselves have no meaning 
+and drastically different weight configurations can produce similar distributions.
+
+Wasserstein metric.
+Let $(M,d)$ be a metric space
+\[
+	W_p(\mu, \nu) = \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \int_{M \times M} d(x, y) \dif \gamma(x,y) \right)^{ \frac{1}{p} }
+\]
+
+Kullback–Leibler divergence / Relative Entropy / I divergence
+
+More generally, if $P$ and $Q$ are probability measures on a measurable space $M$ and $P$ is absolutely continuous with respect to $Q$, 
+then the relative entropy from $Q$ to $P$ is defined as
+\[
+	D_{KL} (P || Q) = \int_M \log \frac{ P(\dif x) }{ Q(\dif x) } Q(\dif x)
+\]
+
+
+Our Context:
+\[
+	D_{KL} (p || p_{\bm{\theta}}) = \int_{\mathbb{R}^d} p(\bm{x}) \log \frac{ p(\bm{x}) }{ p_{\bm{\theta}}(\bm{x}) } \dif \bm{x} 
+	= \mathbb{E} \log \frac{ p(\bm{X}) }{ p_{\bm{\theta}}(\bm{X}) }
+\]
+
+
+
+\subsection{Metrics for Estimator}
+Apart from the quality specific estimates the reliability of the approach is also of key importance.
+I.e. how consistent and stable is the estimate during multiple training runs.
+In order to see this we can look at the variance of the estimates.
+\end{comment}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

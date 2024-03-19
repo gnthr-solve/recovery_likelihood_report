@@ -1,0 +1,71 @@
+
+\section{Maximum Likelihood Estimation (MLE)}
+
+In principle an EBM can be learned with MLE where for a dataset $(\bm{x}_i)_{i=1}^n$ the normalised log-likelihood function is given as
+\[
+	\frac{1}{n} \log \mathcal{L}(\bm{\theta}) 
+	= \frac{1}{n} \log \prod_{i=1}^n p_{\bm{\theta}}(\bm{x}_i)
+	= \frac{1}{n} \sum_{i=1}^n \log p_{\bm{\theta}}(\bm{x}_i) \doteq \mathbb{E}_{ \bm{x} \sim p_{\text{data}} } [\log p_{\bm{\theta}}(\bm{x}) ]
+\]
+
+where the gradient with respect to $\bm{\theta}$ is
+
+\[
+\begin{aligned}
+	\frac{\dif}{\dif \bm{\theta}} \frac{1}{n} \log \mathcal{L}(\bm{\theta}) 
+	&= \frac{\dif}{\dif \bm{\theta}} \left[ \frac{1}{n} \sum_{i=1}^n \log p_{\bm{\theta}}(\bm{x}_i) \right] \\
+	&= \frac{\dif}{\dif \bm{\theta}} \left[ \frac{1}{n} \sum_{i=1}^n \log \left( \frac{1}{Z_{\bm{\theta}}} \exp( - U_{\bm{\theta}} (\bm{x}_i) ) \right) \right] \\
+	&= \frac{\dif}{\dif \bm{\theta}} \left[ - \frac{1}{n} \sum_{i=1}^n U_{\bm{\theta}} (\bm{x}_i)  - \frac{1}{n} \sum_{i=1}^n \log \left( Z_{\bm{\theta}} \right) \right] \\
+	&= \frac{\dif}{\dif \bm{\theta}} \left[ - \frac{1}{n} \sum_{i=1}^n U_{\bm{\theta}} (\bm{x}_i)  - \log \left( Z_{\bm{\theta}} \right) \right] \\
+	&= \frac{\dif}{\dif \bm{\theta}} \left[ - \frac{1}{n} \sum_{i=1}^n U_{\bm{\theta}} (\bm{x}_i)  - \log \left( \int \exp( U_{\bm{\theta}} (\bm{x}) ) d\bm{x} \right) \right] \\
+	&= - \frac{1}{n} \sum_{i=1}^n \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}_i)  - \frac{\dif}{\dif \bm{\theta}}\log \left( \int \exp( U_{\bm{\theta}} (\bm{x}) ) d\bm{x} \right) \\
+\end{aligned}
+\]
+
+where by the chain rule we get that
+
+\[
+	\frac{\dif}{\dif \bm{\theta}} \log \left( \int \exp( - U_{\bm{\theta}} (\bm{x}) ) d\bm{x} \right) 
+	= \frac{\frac{\dif}{\dif \bm{\theta}} \int \exp( - U_{\bm{\theta}} (\bm{x}) ) d\bm{x} }{ Z_{\bm{\theta}} }\\
+\]
+
+and assuming $\exp( - U_{\bm{\theta}} (\bm{x})$ is differentiable in $\bm{\theta}$ for all $\bm{x}$ and is integrable in $\bm{x}$ for all $\bm{\theta}$, then
+\[
+\begin{aligned}
+	\frac{\frac{\dif}{\dif \bm{\theta}} \int \exp( - U_{\bm{\theta}} (\bm{x}) ) d\bm{x} }{ Z_{\bm{\theta}} }
+	&= \frac{ \int \frac{\dif}{\dif \bm{\theta}} \exp( - U_{\bm{\theta}} (\bm{x}) ) d\bm{x} }{ Z_{\bm{\theta}} } \\
+	&= - \frac{ \int \frac{\dif}{\dif \bm{\theta}}U_{\bm{\theta}} (\bm{x}) \exp( - U_{\bm{\theta}} (\bm{x}) ) d\bm{x} }{ Z_{\bm{\theta}} } \\
+	&= - \int \frac{\dif}{\dif \bm{\theta}}U_{\bm{\theta}} (\bm{x}) \frac{ \exp( - U_{\bm{\theta}} (\bm{x}) ) }{ Z_{\bm{\theta}} } d\bm{x} \\
+	&= - \mathbb{E}_{ \bm{x} \sim p_{\bm{\theta}}} \left[ \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}) \right] \\
+\end{aligned}
+\]
+
+The term $\frac{1}{n} \sum_{i=1}^n \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}_i)$ is a MC estimate for the expectation of the parameter gradient 
+with respect to the data, i.e.
+\[
+	- \frac{1}{n} \sum_{i=1}^n \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}_i) 
+	\doteq - \mathbb{E}_{ \bm{x} \sim p_{\text{data}} } \left[ \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}) \right]
+\]
+
+so the final expression we get for $\frac{\dif}{\dif \bm{\theta}} \log \mathcal{L}(\bm{\theta})$ is 
+\[
+	\frac{\dif}{\dif \bm{\theta}} \frac{1}{n} \log \mathcal{L}(\bm{\theta}) = 
+	\mathbb{E}_{ \bm{x} \sim p_{\bm{\theta}}} \left[ \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}) \right]
+	- \mathbb{E}_{ \bm{x} \sim p_{\text{data}} } \left[ \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}) \right] .
+\]
+For training we use the negative log likelihood (NLL) as a loss so the sign reverses and hence the gradient for our loss is 
+\[
+	- \frac{\dif}{\dif \bm{\theta}} \frac{1}{n} \log \mathcal{L}(\bm{\theta}) = 
+	\mathbb{E}_{ \bm{x} \sim p_{\text{data}} } \left[ \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}) \right] 
+	- \mathbb{E}_{ \bm{x} \sim p_{\bm{\theta}}} \left[ \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}) \right] .
+\]
+
+In order to approximate this gradient we can use a MC estimate with samples from the respective distributions,
+using our dataset for the first, and generated samples from our models for the second expectation.
+In order for this estimation strategy to work and to apply the samplers introduced earlier we need to have a way to calculate the energy functional $U$ 
+and have it be differentiable, both with respect to the inputs $\bm{x}$ and with respect to the model parameters $\bm{\theta}$.
+
+
+
+
+

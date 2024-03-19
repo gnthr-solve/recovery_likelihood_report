@@ -1,0 +1,144 @@
+\section{Recovery Likelihood}
+
+\begin{comment}
+Let $\bm{x} \sim p_{\text{data}}(\bm{x})$ denote a training example, and $p_{\bm{\theta}}(\bm{x})$ denote a model’s probability density function 
+that aims to approximates $p_{\text{data}}(\bm{x})$. 
+An energy-based model (EBM) is defined as:
+
+\[
+	p_{\bm{\theta}}(\bm{x}) = \frac{1}{Z_{\bm{\theta}}} \exp( - U_{\bm{\theta}} (\bm{x}) )
+\]
+
+where $Z_{\bm{\theta}} = \int \exp( - U_{\bm{\theta}} (\bm{x}) ) d\bm{x}$ is the partition function which is analytically intractable for high dimensional $\bm{x}$.
+\end{comment}
+
+The idea of recovery likelihood is to create perturbed samples $\tilde{\bm{x}} = \bm{x} + \sigma \varepsilon$ with $\varepsilon \sim \mathcal{N}(0, I)$, 
+from our original dataset and then use the conditional distribution
+\[
+\begin{aligned}
+	p_{\bm{\theta}}(\bm{x} | \tilde{\bm{x}}) &=  \frac{ p(\tilde{\bm{x}} | \bm{x})  p_{\bm{\theta}}(\bm{x}) }{ p(\tilde{\bm{x}}) } \\
+	&= \frac{ \exp( -\frac{ \norm{\tilde{\bm{x}} - \bm{x}}^2 }{ 2 \sigma^2 })  \exp( - U_{\bm{\theta}} (\bm{x}) ) }{ Z_{\bm{\theta}} (2\pi \sigma^2)^{ \frac{n}{2} } p(\tilde{\bm{x}}) } \\
+	&= \frac{ \exp( - U_{\bm{\theta}} (\bm{x}) - \frac{ \norm{\tilde{\bm{x}} - \bm{x}}^2 }{ 2 \sigma^2 }) }{ Z_{\bm{\theta}} (2\pi \sigma^2)^{ \frac{n}{2} } p(\tilde{\bm{x}}) } \\
+	&= \frac{ \exp( -U_{\bm{\theta}} (\bm{x}) - \frac{ \norm{\tilde{\bm{x}} - \bm{x}}^2 }{ 2 \sigma^2 }) }{ \tilde{Z}_{\bm{\theta}} (\tilde{\bm{x}}) } \\
+\end{aligned}
+\]
+
+Suppose now that for our samples $(\bm{x}_i )_{i=1}^n $ we have the perturbed samples $(\tilde{\bm{x}}_i )_{i=1}^n $ that we gained by adding noise with
+$\tilde{\bm{x}}_i = \bm{x}_i + \sigma \varepsilon_i$, then the normalised recovery-log-likelihood (RLL) is defined as
+
+\[
+	\frac{1}{n} \mathcal{J}(\bm{\theta}) = \frac{1}{n} \sum_{i=1}^n \log p_{\bm{\theta}}(\bm{x} | \tilde{\bm{x}})
+\]
+
+With the expression above this is
+
+\[
+	\frac{1}{n} \sum_{i=1}^n \log p_{\bm{\theta}}(\bm{x} | \tilde{\bm{x}}) 
+	= \frac{1}{n} \sum_{i=1}^n \left ( - U_{\bm{\theta}} (\bm{x}) - \frac{ \norm{\tilde{\bm{x}} - \bm{x}}^2 }{ 2 \sigma^2 }) - \log(\tilde{Z}_{\bm{\theta}} (\tilde{\bm{x}}) \right)
+\]
+where
+\[
+\begin{aligned}
+	\log(\tilde{Z}_{\bm{\theta}} (\tilde{\bm{x}}) )
+	&= \log( Z_{\bm{\theta}} (2\pi \sigma^2)^{ \frac{n}{2} } p(\tilde{\bm{x}})) \\
+	&= \log( Z_{\bm{\theta}}) + \frac{n}{2}\log(2\pi \sigma^2) + \log( p(\tilde{\bm{x}})) \\
+\end{aligned}
+\]
+Thus upon differentiating by $\theta$ we have
+
+\[
+\begin{aligned}
+	\frac{\dif}{\dif \bm{\theta} } \frac{1}{n} \mathcal{J}(\bm{\theta})
+	&= - \frac{1}{n} \sum_{i=1}^n \frac{\dif}{\dif \bm{\theta} } U_{\bm{\theta}} (\bm{x}) - \frac{\dif}{\dif \bm{\theta} } \log(\tilde{Z}_{\bm{\theta}} (\tilde{\bm{x}}) \\
+	&= - \frac{1}{n} \sum_{i=1}^n \frac{\dif}{\dif \bm{\theta} } U_{\bm{\theta}} (\bm{x}) 
+		- \frac{\dif}{\dif \bm{\theta} } ( \log( Z_{\bm{\theta}}) + \frac{n}{2}\log(2\pi \sigma^2) + \log( p(\tilde{\bm{x}})) ) \\
+	&= - \frac{1}{n} \sum_{i=1}^n \frac{\dif}{\dif \bm{\theta} } U_{\bm{\theta}} (\bm{x}) - \frac{\dif}{\dif \bm{\theta} } \log( Z_{\bm{\theta}})  \\
+	&= \frac{\dif}{\dif \bm{\theta} } \frac{1}{n} \mathcal{L}(\bm{\theta})  \\
+\end{aligned}
+\]
+
+So the gradients of RLL and standard LL coincide. 
+This means we can sample from  the perturbed distribution $p_{\bm{\theta}}(\bm{x} | \tilde{\bm{x}})$, which is less multimodal and hence easier to sample from.
+
+When we use the previously introduced Markov chain samplers we can treat the perturbed distribution like another EBM model with conditional energy functional
+\[
+	\tilde{U}_{\bm{\theta}} (\bm{x}) = U_{\bm{\theta}} (\bm{x}) + \frac{ \norm{\tilde{\bm{x}} - \bm{x}}^2 }{ 2 \sigma^2 }
+\]
+
+and use its gradient to generate the samples. This gradient is given by
+\[
+\begin{aligned}
+	\nabla_{\bm{x}} \tilde{U}_{\bm{\theta}} (\bm{x}) 
+	&= \nabla_{\bm{x}} (U_{\bm{\theta}} (\bm{x}) + \frac{ \norm{\tilde{\bm{x}} - \bm{x}}^2 }{ 2 \sigma^2 }) \\
+	&= \nabla_{\bm{x}} U_{\bm{\theta}} (\bm{x}) + \nabla_{\bm{x}} \frac{ (\tilde{\bm{x}} - \bm{x})^T (\tilde{\bm{x}} - \bm{x}) }{ 2 \sigma^2 } \\
+	&= \nabla_{\bm{x}} U_{\bm{\theta}} (\bm{x}) - \frac{ \tilde{\bm{x}} - \bm{x} }{ \sigma^2 } \\
+\end{aligned}
+\]
+
+
+\begin{comment}
+\subsection{Normal Approximation to Conditional}
+
+The previous discussion revolved around making the model distribution easier to sample from by essentially convolving the data with a Gaussian 
+and then sampling from the conditional. 
+This conditional is less multimodal and the hope is that the Markov chain samplers converge to the target faster and allow to create representative samples with less iterations.
+
+However, when the perturbation variance $\sigma$ is sufficiently small, 
+one can obtain samples more directly by sampling from a normal approximation to the conditional.
+When we do a first-order Tailor approximation to the conditional energy functional at $\tilde{\bm{x}}$ we get
+
+\[
+\begin{aligned}
+	\tilde{U}_{\bm{\theta}} (\bm{x}) 
+	&\doteq \tilde{U}_{\bm{\theta}} (\tilde{\bm{x}}) + (\bm{x} - \tilde{\bm{x}})^T  \nabla_{\bm{x}} \tilde{U}_{\bm{\theta}} (\tilde{\bm{x}}) 
+		+ \mathcal{O}(\norm{\bm{x} - \tilde{\bm{x}}}^2) \\
+	&= U_{\bm{\theta}} (\tilde{\bm{x}}) + \frac{ (\tilde{\bm{x}} - \tilde{\bm{x}})^T (\tilde{\bm{x}} - \tilde{\bm{x}}) }{ 2 \sigma^2 }
+		+ (\bm{x} - \tilde{\bm{x}})^T (\nabla_{\bm{x}} U_{\bm{\theta}} (\tilde{\bm{x}}) - \frac{ \tilde{\bm{x}} - \tilde{\bm{x}} }{ \sigma^2 }) 
+		+ \mathcal{O}(\norm{\bm{x} - \tilde{\bm{x}}}^2)\\
+	&= U_{\bm{\theta}} (\tilde{\bm{x}}) + (\bm{x} - \tilde{\bm{x}})^T \nabla_{\bm{x}} U_{\bm{\theta}} (\tilde{\bm{x}}) + \mathcal{O}(\norm{\bm{x} - \tilde{\bm{x}}}^2)\\
+\end{aligned}
+\]
+
+
+
+\[
+\begin{aligned}
+	\tilde{U}_{\bm{\theta}} (\bm{x}) 
+	&= U_{\bm{\theta}} (\bm{x}) + \frac{ \norm{\tilde{\bm{x}} - \bm{x}}^2 }{ 2 \sigma^2 }) \\
+	&\doteq U_{\bm{\theta}} (\tilde{\bm{x}}) + \frac{ (\tilde{\bm{x}} - \tilde{\bm{x}})^T (\tilde{\bm{x}} - \tilde{\bm{x}}) }{ 2 \sigma^2 } 
+		+ \nabla_{\bm{x}} \\
+\end{aligned}
+\]
+\end{comment}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

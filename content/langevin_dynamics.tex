@@ -1,0 +1,425 @@
+\section{Langevin Dynamics}
+
+\subsection{Langevin Equation}
+The Langevin equation describes the evolution of a particle's position in a dissipative medium and is given by:
+
+\[
+	m \frac{ d^2 x }{ {dt}^2 } = - \gamma \frac{ d x }{ dt } + \sqrt{2 k T \gamma} \eta(t)
+\]
+
+where $m$ is the mass, $\gamma$ is the friction coefficient, $x$ is the position of the particle, $T$ is the temperature and $\eta(t)$ is a white noise term.
+The Langevin equation combines deterministic motion with a stochastic term to model the impact of random collisions with surrounding particles in a medium. 
+It's widely used in statistical mechanics to describe the behaviour of particles under the influence of both deterministic and random forces. 
+
+
+\subsection{Langevin Diffusion}
+The Langevin diffusion process is a stochastic differential equation (SDE) that represents the continuous-time evolution of a particle's position and is given by:
+
+\[
+	d\bm{X}_t = - \frac{ 1 }{ \gamma } \nabla U(\bm{X}_t) dt + \sqrt{\frac{ 2 k T }{ \gamma }} d\bm{B}_t
+\]
+
+where $U(x)$ is the potential energy at position $x$ and $\bm{B}$ is a Brownian motion.
+Langevin diffusion describes the random motion of a particle in a potential field, incorporating the effects of both deterministic drift and stochastic noise.
+
+
+\subsection{Invariant Measure via Fokker-Planck Equation} 
+Consider a simpler form of the Langevin diffusion SDE:
+\[
+	\dif \bm{X}_t = - \nabla U(\bm{X}_t) \dif t + \sqrt{2} \dif \bm{B}_t
+\]
+where $\gamma = 1$ and $T = k = 1$.
+The Fokker-Planck Equation for the density of the solution $p(\bm{x}, t)$ reads
+\[
+\begin{aligned}
+	\del_t p(\bm{x},t) 
+	&= \sum_i \del_{x_i} \left[ \del_{x_i} U(\bm{x}) p(\bm{x},t) \right] + \sum_i \sum_j \del_{x_i} \del_{x_j} \delta_{i,j} p(\bm{x},t) \\
+	&= \sum_i \del_{x_i} \left[ \del_{x_i} U(\bm{x}) p(\bm{x},t) \right] + \sum_i \del_{x_i}^2 p(\bm{x},t) \\
+	&= \nabla \cdot \left( \nabla U(\bm{x}) p(\bm{x},t) + \nabla p(\bm{x},t) \right) \\
+\end{aligned}
+\]
+
+We can use this equation to show that the distribution with density
+\[
+	\pi(\bm{x}) = \frac{ 1 }{ \int \exp(-U(\bm{y})) d\bm{y} }  \exp(-U(\bm{x})) =: \frac{ 1 }{ Z } \exp(-U(\bm{x}))
+\]
+
+is an invariant measure of the process defined by this SDE. 
+To see this, consider that the gradient of $\pi$ with respect to $\bm{x}$ is given by:
+\[
+	\nabla \pi(\bm{x}) 
+	= \frac{ 1 }{ Z } \nabla \exp( -U(\bm{x}) )
+	= - \frac{ 1 }{ Z } \nabla U(\bm{x}) \exp( -U(\bm{x}) )
+	= - \nabla U(\bm{x}) \pi(\bm{x})
+\]
+
+So when we replace $p(\bm{x}, t)$ on the r.h.s. of the Fokker-Planck equation with $\pi(\bm{x})$, we have that
+\[
+\begin{aligned}
+	\del_t p(\bm{x},t) 
+	&= \nabla \cdot \left( \nabla U(\bm{x}) \pi(\bm{x}) + \nabla \pi(\bm{x}) \right) \\
+	&= \nabla \cdot \left( \nabla U(\bm{x}) \pi(\bm{x}) - \nabla U(\bm{x}) \pi(\bm{x}) \right) \\
+	&= 0 \\
+\end{aligned}
+\]
+
+Thus, if the Langevin diffusion process attains the measure given by $\pi(\bm{x})$ it will not change anymore and hence $\pi(\bm{x})$ is an invariant measure of the process.
+This means for one that the Langevin diffusion process can be made to converge to a desired density of the exponential family.
+On the other hand one can use it to sample from any unnormalised density $\tilde{p}(\bm{x})$ as taking $-U(\bm{x}) := \log \tilde{p}(\bm{x})$
+means the stationary density of the Langevin diffusion will be
+\[
+\begin{aligned}
+	\pi(\bm{x}) 
+	&= \frac{ \exp(-U(\bm{x})) }{ \int \exp(-U(\bm{y})) d\bm{y} } \\
+	&= \frac{ \tilde{p}(\bm{x}) }{ \int \tilde{p}(\bm{y}) d\bm{y} } \\
+	&= p(\bm{x}) \\
+\end{aligned}
+\]
+
+i.e. the density of the stationary distribution of this Langevin diffusion process corresponds to the normalised version of $\tilde{p}$.
+
+
+\subsection{Unadjusted Langevin Algorithm (ULA)}
+
+The problem in general is that we do not have a closed form solution for the Langevin diffusion SDE, and cannot directly sample from the process it defines.
+The straightforward approach then is to simulate the process by discretising it and sampling from the discrete approximation instead.
+Discretising the SDE with the Euler-Maruyama scheme is the basis for the unadjusted Langevin Algorithm. 
+For the SDE of the Langevin diffusion process this discretisation produces
+\[
+	\hat{\bm{X}}_{t_{i+1}} = \hat{\bm{X}}_{t_i} - \nabla U( \hat{\bm{X}}_{t_i} ) [t_{i+1} - t_i] + \sqrt{2 (t_{i+1} - t_i)} \bm{Z}_i
+\]
+
+where the $\bm{Z}_i$ are i.i.d. normal distributed, i.e. $\bm{Z}_i \sim \mathcal{N}(0, \bm{I})$.
+Let's modify this equation to reflect an equidistant grid of time points with step size $\varepsilon$ 
+and let $\bm{X}_n := \hat{\bm{X}}_{t_n}$ be the discretised approximation of $\bm{X}$ w.r.t. this grid at step $n$. We then have:
+\[
+	\bm{X}_{n+1} = \bm{X}_n - \varepsilon \nabla U( \bm{X}_n ) + \sqrt{2 \varepsilon} \bm{Z}_n
+\]
+
+Which gives us a chain of connected random variables. So we can simulate realisations of this discrete process with this simple algorithm
+
+\NoCaptionOfAlgo
+\begin{algorithm}[H]
+\SetAlgoLined
+\DontPrintSemicolon
+\SetKwComment{Comment}{$\triangleright$\ }{}
+\SetAlCapSkip{1em}
+\SetAlCapNameFnt{\normalfont\normalsize}
+\caption{Unadjusted Langevin Algorithm}
+
+Initialise $\bm{x}_0$ \;
+
+\For{$ n \leq N $ }{
+	sample $\bm{Z}_n \sim \mathcal{N}(0, \bm{I})$ \;
+	$\bm{x}_{n+1} := \bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) + \sqrt{2 \varepsilon} \bm{Z}_n$ \;
+}
+\end{algorithm}
+
+This scheme incurs a discretisation/integration error however that could change the stationary distribution.
+This problem gives rise to the Metropolis adjusted Langevin algorithm that introduces an acceptance probability to ensure convergence to the desired stationary distribution.
+
+
+\subsection{Metropolis Adjusted Langevin Algorithm (MALA)}
+
+The MALA method is a Metropolis-Hastings algorithm where the proposal density is based on the Langevin diffusion.
+We can now adapt our point of view and consider the next point $\bm{X}_{n+1}$ as the suggestion of our proposal density.
+For this we take this not as a discrete process rather think of a fixed vector $\bm{x}_n$ as a concrete realisation of $\bm{X}_n$. 
+So for a fixed specific step the random vector $\hat{\bm{X}}$ is given by
+\[
+	\hat{\bm{X}} = \bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) + \sqrt{2 \varepsilon} \bm{Z}_n
+\]
+
+Then the law of $\hat{\bm{X}}$ inherits the normal distribution of $\bm{Z}_n$ with mean
+\[
+\begin{aligned}
+	\Ex{ \hat{\bm{X}} } 
+	&= \Ex{ \bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) + \sqrt{2 \varepsilon} \bm{Z}_n } \\
+	&= \bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) + \sqrt{2 \varepsilon} \Ex{ \bm{Z}_n } \\
+	&= \bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) . \\
+\end{aligned}
+\]
+
+The difference between $\hat{\bm{X}}$ and its expectation is thus
+\[
+\begin{aligned}
+	\hat{\bm{X}} - \Ex{ \hat{\bm{X}} } 
+	&= \left(\bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) + \sqrt{2 \varepsilon} \bm{Z}_n \right) - \left(\bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) \right) \\
+	&= \sqrt{2 \varepsilon} \bm{Z}_n \\
+\end{aligned}
+\]
+
+and with this term we can directly calculate the variance
+\[
+\begin{aligned}
+	\text{Var}(\hat{\bm{X}}) &= \Ex{ ( \hat{\bm{X}} - \Ex{ \hat{\bm{X}} } )^T ( \hat{\bm{X}} - \Ex{ \hat{\bm{X}} } ) } \\
+	&= \Ex{ (\sqrt{2\varepsilon} \bm{Z}_n)^T (\sqrt{2 \varepsilon} \bm{Z}_n) } \\
+	&= 2 \varepsilon \Ex{ \bm{Z}_n^T \bm{Z}_n } \\
+	&= 2 \varepsilon \bm{I}. \\
+\end{aligned}
+\]
+
+With this we can define a Metropolis-Hastings proposal density
+\[
+	q(\hat{\bm{x}} | \bm{x}_n) = \mathcal{N}( \hat{\bm{x}} | \bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) ; 2 \varepsilon \bm{I} )
+\]
+
+and state the complete algorithm:
+
+\NoCaptionOfAlgo
+\begin{algorithm}[H]
+\SetAlgoLined
+\DontPrintSemicolon
+\SetKwComment{Comment}{$\triangleright$\ }{}
+\SetAlCapSkip{1em}
+\SetAlCapNameFnt{\normalfont\normalsize}
+\caption{Metropolis Adjusted Langevin Algorithm}
+
+Initialise $\bm{x}_0$ \;
+
+\For{$ n \leq N $ }{
+	sample $\hat{\bm{x}} \sim \mathcal{N}(\bm{x}_n - \varepsilon \nabla U( \bm{x}_n ) , 2 \varepsilon \bm{I} ))$ \;
+	compute 
+	$
+		\alpha( \bm{x}_n, \hat{\bm{x}} ) 
+		= \min \left \{ 1, \frac
+			{ p(\hat{\bm{x}}) q(\bm{x}_n | \hat{\bm{x}}) } 
+			{ p(\bm{x}_n) q( \hat{\bm{x}} | \bm{x}_n ) }
+		\right\}
+	$
+	\;
+	sample $u \sim \mathcal{U}(0,1)$ \;
+	\uIf{$ u \leq \alpha( \bm{x}_n, \hat{\bm{x}} )$}{
+		$\bm{x}_{n+1} := \hat{\bm{x}}$ \;
+	}
+	\Else{
+		$\bm{x}_{n+1} := \bm{x}_n$ \;
+	}
+}
+\end{algorithm}
+
+
+In order to implement the algorithm efficiently we would like to get a simplified expression for the acceptance probability
+\[
+	\alpha( \bm{x}_n, \hat{\bm{x}} ) 
+	= \min \left \{ 1, \frac
+		{ p(\hat{\bm{x}}) q( \bm{x}_n | \hat{\bm{x}} )  } 
+		{ p(\bm{x}_n) q( \hat{\bm{x}} | \bm{x}_n ) }
+	\right\}
+\]
+
+For the ratio of the target density we get
+\[
+	\frac{ p(\hat{\bm{x}}) }{ p(\bm{x}_n) } = \frac{ \exp(-U(\hat{\bm{x}})) }{ \exp(-U(\bm{x}_n)) } = \exp( U(\bm{x}_n) - U(\hat{\bm{x}}) )
+\]
+as the normalisation constant cancels in the ratio.
+
+When substituting the density for the multivariate normal in the proposal density we get for general $\bm{x}, \bm{y}$,
+\[
+	q(\bm{x} | \bm{y}) 
+	= \frac
+		{ \exp \left( -\frac{1}{4\varepsilon} \norm{\bm{x} - \bm{y} + \varepsilon \nabla U( \bm{y} ) }^2 \right) }
+		{ \sqrt{(4\pi \varepsilon)^d } }
+\]
+
+So with $\hat{\bm{x}}, \bm{x}_n$, we can write the ratio as
+\[
+\begin{aligned}
+	\frac{ q(\bm{x}_n | \hat{\bm{x}}) }{ q(\hat{\bm{x}} | \bm{x}_n) }
+	&= \frac
+		{
+			\frac
+			{ \exp \left( -\frac{1}{4\varepsilon} \norm{\bm{x}_n - \hat{\bm{x}} + \varepsilon \nabla U( \hat{\bm{x}} ) }^2 \right) }
+			{ \sqrt{(4\pi \varepsilon)^d } }
+		}
+		{
+			\frac
+			{ \exp \left( -\frac{1}{4\varepsilon} \norm{\hat{\bm{x}} - \bm{x}_n + \varepsilon \nabla U( \bm{x}_n ) }^2 \right) }
+			{ \sqrt{(4\pi \varepsilon)^d } }
+		} \\
+	&= \frac
+		{
+			\exp \left( -\frac{1}{4\varepsilon}  \norm{\bm{x}_n - \hat{\bm{x}} + \varepsilon \nabla U( \hat{\bm{x}} ) }^2\right)
+		}
+		{
+			\exp \left( -\frac{1}{4\varepsilon} \norm{\hat{\bm{x}} - \bm{x}_n + \varepsilon \nabla U( \bm{x}_n ) }^2 \right) 
+		} \\
+	&= \exp 
+		\left[ 
+			\frac{1}{4\varepsilon} \norm{\hat{\bm{x}} - \bm{x}_n + \varepsilon \nabla U( \bm{x}_n ) }^2 
+			-\frac{1}{4\varepsilon} \norm{\bm{x}_n - \hat{\bm{x}} + \varepsilon \nabla U( \hat{\bm{x}} ) }^2 
+		\right] \\
+	&= \exp 
+		\left[ 
+			-\frac{1}{4\varepsilon} 
+			\left( \norm{\bm{x}_n - \hat{\bm{x}} + \varepsilon \nabla U( \hat{\bm{x}} ) }^2 - \norm{\hat{\bm{x}} - \bm{x}_n + \varepsilon \nabla U( \bm{x}_n ) }^2  \right) 
+		\right] \\
+\end{aligned}
+\]
+
+Together we get the acceptance probability
+\[
+	\alpha( \bm{x}_n, \hat{\bm{x}} ) 
+	= \min \left \{ 1, \exp \left(
+		U(\bm{x}_n) - U(\hat{\bm{x}})
+		-\frac{1}{4\varepsilon} 
+		\left( \norm{\bm{x}_n - \hat{\bm{x}} + \varepsilon \nabla U( \hat{\bm{x}} ) }^2 - \norm{\hat{\bm{x}} - \bm{x}_n + \varepsilon \nabla U( \bm{x}_n ) }^2  \right)
+		\right) 
+	\right\}
+\]
+
+
+\subsection{Sampling Accuracy}
+
+It is important to note here that in practice we can not run the corresponding algorithm for an indefinite amount of time.
+A sampler based on MALA, ULA or HMC is used for generating training samples from the parametric model.
+
+Typically one either just takes the first $m$ samples in the chains, or lets the sampler run for some $K$ iterations before taking the subsequent samples.
+That $K$ is often called burn-in period and can improve the quality of the samples at the cost of more computation time.
+
+When cutting a samplers chains off we incur two fundamental errors. 
+The first is the error due to the discretisation of the process that is using $\hat{\bm{X}}_t$ instead of the true $\bm{X}_t$.
+It depends on the discretisation step $\varepsilon$ and is meant to be counteracted by the Metropolis Hastings acceptance step in MALA.
+We are interested in strong convergence here and we know that the convergence order of the Euler-Maruyama discretisation is proportional to $\sqrt{\varepsilon}$.
+For ULA this is significantly more important as the quality of the samples suffers directly, 
+while for MALA a poorly chosen $\varepsilon$ means that less new samples will be accepted which can either impact quality or computational effort.
+
+The second error is due to incomplete convergence, i.e. even if we could sample from $\bm{X}_t$ directly,
+we only have a guarantee that $\bm{X}$ converges to the target distribution in the limit, 
+but might not resemble it closely enough at a specific $t$.
+One could run convergence diagnostics like the Gelman-Rubin test to assess the convergence status.
+That would introduce computational overhead however and complicate the code.
+Another option is to set a specific burn-in period and hope for sufficient convergence.
+
+
+
+
+
+
+
+\begin{comment}
+% Attempt at simplifying the proposal density ratio
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The square of the two norm corresponds to the inner product of the components with themselves. For general $\bm{x}, \bm{y}$ the binomial expansion is:
+\[
+	\Innerp{ \bm{x} + \bm{y} } = \Innerp{ \bm{x} } + 2 \Innerp{ \bm{x} , \bm{y} } + \Innerp{ \bm{y} } .
+\]
+
+So for the concrete case we get:
+\[
+\begin{aligned}
+	\norm{\bm{x}_n - \hat{\bm{x}} + \varepsilon \nabla U( \hat{\bm{x}} ) }^2 
+	&= \Innerp{ \bm{x}_n - \hat{\bm{x}} + \varepsilon \nabla U( \hat{\bm{x}} )} \\
+	&= \Innerp{ (\bm{x}_n - \hat{\bm{x}}) + \varepsilon \nabla U( \hat{\bm{x}} )} \\
+	&= \Innerp{ \bm{x}_n - \hat{\bm{x}} } + 2 \varepsilon \Innerp{ \bm{x}_n - \hat{\bm{x}} , \nabla U( \hat{\bm{x}} ) } + \varepsilon^2 \Innerp{ \nabla U( \hat{\bm{x}} ) } \\
+	&= \norm{ \bm{x}_n - \hat{\bm{x}} }^2 + 2 \varepsilon \Innerp{ \bm{x}_n - \hat{\bm{x}} , \nabla U( \hat{\bm{x}} ) } + \varepsilon^2 \norm{ \nabla U( \hat{\bm{x}} ) }^2 \\
+\end{aligned}
+\]
+
+And analogously
+\[
+\begin{aligned}
+	\norm{\hat{\bm{x}} - \bm{x}_n + \varepsilon \nabla U( \bm{x}_n ) }^2
+	&= \Innerp{ \hat{\bm{x}} - \bm{x}_n } + 2 \varepsilon \Innerp{ \hat{\bm{x}} - \bm{x}_n , \nabla U( \bm{x}_n ) } + \varepsilon^2 \Innerp{ \nabla U( \bm{x}_n ) } \\
+	&= \norm{ \hat{\bm{x}} - \bm{x}_n }^2 + 2 \varepsilon \Innerp{ \hat{\bm{x}} - \bm{x}_n , \nabla U( \bm{x}_n ) } + \varepsilon^2 \norm{ \nabla U( \bm{x}_n ) }^2 \\
+\end{aligned}
+\]
+
+The difference between the mixed terms can be rewritten as
+\[
+\begin{aligned}
+	2 \varepsilon \Innerp{ \bm{x}_n - \hat{\bm{x}} , \nabla U( \hat{\bm{x}} ) } - 2 \varepsilon \Innerp{ \hat{\bm{x}} - \bm{x}_n , \nabla U( \bm{x}_n ) } 
+	&= 2 \varepsilon (\Innerp{ \bm{x}_n - \hat{\bm{x}} , \nabla U( \hat{\bm{x}} ) } + \Innerp{ \bm{x}_n - \hat{\bm{x}} , \nabla U( \bm{x}_n ) } )\\
+	&= 2 \varepsilon \Innerp{ \bm{x}_n - \hat{\bm{x}} , \nabla U( \hat{\bm{x}} ) + \nabla U( \bm{x}_n ) } \\
+	&= 2 \varepsilon (\Innerp{ \bm{x}_n, \nabla U( \hat{\bm{x}} ) + \nabla U( \bm{x}_n ) } - \Innerp{ \hat{\bm{x}} , \nabla U( \hat{\bm{x}} ) + \nabla U( \bm{x}_n ) }) \\
+\end{aligned}
+\]
+
+So the overall difference
+\[
+\begin{aligned}
+	& \norm{\bm{x}_n - \hat{\bm{x}} + \varepsilon \nabla U( \hat{\bm{x}} ) }^2 - \norm{\hat{\bm{x}} - \bm{x}_n + \varepsilon \nabla U( \bm{x}_n ) }^2 \\
+	&= 2 \varepsilon \Innerp{ \bm{x}_n - \hat{\bm{x}} , \nabla U( \hat{\bm{x}} ) + \nabla U( \bm{x}_n ) } 
+	+ \varepsilon^2( \norm{ \nabla U( \hat{\bm{x}} ) }^2 - \norm{ \nabla U( \bm{x}_n ) }^2) \\
+	&= 2 \varepsilon (\bm{x}_n - \hat{\bm{x}})^T (\nabla U( \hat{\bm{x}} ) + \nabla U( \bm{x}_n ) ) 
+	+ \varepsilon^2 \left(\nabla U( \hat{\bm{x}} )^T \nabla U( \hat{\bm{x}} ) - \nabla U( \bm{x}_n )^T \nabla U( \bm{x}_n ) \right)\\
+\end{aligned}
+\]
+
+and thus finally
+\[
+\begin{aligned}
+	&\frac{ p(\hat{\bm{x}}) q(\hat{\bm{x}} | \bm{x}_n) }{ p(\bm{x}_n) q( \bm{x}_n | \hat{\bm{x}} ) } \\
+	&= \exp \left(
+		U(\bm{x}_n) - U(\hat{\bm{x}})
+		- \frac{1}{2} (\bm{x}_n - \hat{\bm{x}})^T (\nabla U( \hat{\bm{x}} ) + \nabla U( \bm{x}_n ) )
+		- \frac{\varepsilon}{4} \left(\nabla U( \hat{\bm{x}} )^T \nabla U( \hat{\bm{x}} ) - \nabla U( \bm{x}_n )^T \nabla U( \bm{x}_n ) \right)
+	\right) \\
+\end{aligned}
+\]
+\end{comment}
+
+
+
+\begin{comment}
+% From the paper "Riemann manifold Langevin and Hamiltonian Monte Carlo methods"
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Consider the context of 
+Let $\bm{\theta} \in \Theta \subseteq \mathbb{R}^d$ be a random vector in parameter space with density $p(\bm{\theta})$ 
+and denote the logarithm of this density by
+\[
+	\mathcal{L}(\bm{\theta}) := \log p(\bm{\theta}).
+\]
+
+The Langevin diffusion that MALA is based on is now given by the SDE
+\[
+	d\bm{\theta}(t) = \frac{ \nabla_{\bm{\theta}} \mathcal{L}(\bm{\theta}(t)) }{ 2 }dt + d \bm{B}_t
+\]
+where $\bm{B}_t$ is a $d$-dimensional Brownian Motion.
+
+
+
+% From mathoverflow
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The easiest way to understand why Langevin dynamics targets the "correct distribution" is to look at the corresponding Fokker-Planck equation.
+
+Let me be more precise. Let us assume that our target distribution has the following density: 
+
+$\pi(x) = \frac1{\bm{Z}} \exp(-U(x))$,
+
+where $x \in \mathbb{R}^d$, $U$ is often called the potential energy, and $\bm{Z}$ is the normalizing constant. 
+
+The Langevin algorithm, either the Metropolis-adjusted version (MALA) or the unadjusted version (ULA), is based on the Langevin diffusion, that is described by the following stochastic differential equation (SDE):
+
+$d\bm{X}_t = -\nabla U(\bm{X}_t)dt + \sqrt{2}dB_t$,
+
+where $B_t$ denotes the standard Brownian motion. To understand how the *probability density function* of $\bm{X}_t$ evolves in time, we can use a very useful tool, which is called the Fokker-Planck equation (FPE). For notational simplicity let us assume we are in the scalar case, i.e. $d=1$ (for $d>1$ the idea is the same). In this case the FPE reads:   
+
+$\partial_t p(x,t) = \partial_x (\partial_x U(x) p(x,t)) + \partial_x^2 p(x,t)$,
+
+where $p(x,t)$ is the probability density function of $\bm{X}_t$ at time $t$. Now the main trick is this: 
+
+> Let us assume the process $(\bm{X}_t)_{t \geq 0}$ (which is a Markov process) is ergodic with its invariant measure. Then, when $p(x,t)$ reaches to this invariant measure, it cannot deviate from it anymore (since it's the invariant measure). Hence, when $p(x,t)$ converges to the invariant measure, then $\partial_t p(x,t)$ must be equal to zero (since it won't change over the time $t$).
+
+Given this observation, in order to verify that the invariant measure of the Langevin equation is indeed $\pi$, we only need to check if $\partial_t p(x,t)$ becomes $0$ or not, when we replace $p(x,t)$ by $\pi(x)$. Now, let's see if this really happens:
+
+\begin{align}
+\partial_t p(x,t) &= \partial_x (\partial_x U(x) \pi(x)) + \partial_x^2 \pi(x) \\
+&= \partial_x (\partial_x U(x) \pi(x) + \partial_x \pi(x))
+\end{align}
+By using the fact that $\partial_x U(x) = -\partial_x \log \pi(x)= - \frac1{\pi(x)} \partial_x \pi(x)$, we obtain:
+\begin{align}
+\partial_t p(x,t) &= \partial_x (- \frac1{\pi(x)} \pi(x) \partial_x \pi(x) + \partial_x \pi(x)) \\
+&= \partial_x (- \partial_x \pi(x) + \partial_x \pi(x)) \\
+&= 0.
+\end{align}
+
+Then, this shows that $\pi$ is **an** invariant distribution of the process $(\bm{X}_t)_t$, and if $(\bm{X}_t)_t$ has a unique invariant distribution (for instance if $\nabla U$ is Lipschitz), then $\pi$ is the unique invariant distribution. 
+
+Now, if we go back to ULA (unadjusted Langevin algorithm) or MALA (Metropolis adjusted Langevin algorithm), they are both based on the Euler discretization of the Langevin SDE:
+
+$Y_{n+1} = Y_{n} - \eta \nabla U(Y_n) + \sqrt{2\eta} \bm{Z}_{n+1}$,
+
+where $\bm{Z}_n$ is a standard Gaussian random variable. This scheme is called ULA. The process $(Y_n)_n$ is still a Markov process, but it doesn't target $\pi$ anymore due to the discretization error. Hence, one can couple it with a Metropolis acceptance step to get rid of this error. The resulting algorithm is called MALA. 
+
+\end{comment}
+

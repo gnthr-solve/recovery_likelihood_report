@@ -1,0 +1,109 @@
+
+\begin{comment}
+We have a dataset $\mathcal{D} = (\bm{x}_i)_{i = 1}^n \subseteq \mathbb{R}^d$ from an unknown distribution of a random vector $\bm{X} : \Omega \to \mathbb{R}^d$,
+with some probability density function $p : \mathbb{R}^d \to \mathbb{R}$.
+We want to use the data to approximate this density function with a parametrised model density function $p_{\bm{\theta}}: \mathbb{R}^d \to \mathbb{R}$,
+for a vector of parameters $\bm{\theta} \in \mathbb{R}^m$, by estimating an optimal $\hat{\bm{\theta}}$ such that $p_{ \hat{\bm{\theta}} }$ is close to $p$.
+\end{comment}
+
+\newtheorem{theorem}{Theorem}
+
+\section{Score Matching}
+
+Suppose we use a parametrised model density function $p_{\bm{\theta}}: \mathbb{R}^d \to \mathbb{R}$, 
+for which we only know the probability kernel $K_{\bm{\theta}}: \mathbb{R}^d \to \mathbb{R}$ but not the normalisation constant $Z(\bm{\theta})$.
+
+Score matching is based on minimising the expected square distance between the model score function and the data score function.
+The model score function is defined as
+\[
+	S_{\bm{\theta}} (\bm{x}) = \nabla_{\bm{x}} \log p_{\bm{\theta}}(\bm{x})
+\]
+
+and similarly the data score function is given by
+\[
+	S (\bm{x}) = \nabla_{\bm{x}} \log p(\bm{x}).
+\]
+
+A major benefit of working with the score functions instead of with the densities directly is that the normalisation constant falls away,
+\[
+\begin{aligned}
+	S_{\bm{\theta}} (\bm{x}) 
+	&= \nabla_{\bm{x}} \log p_{\bm{\theta}}(\bm{x}) \\
+	&= \nabla_{\bm{x}} \log \frac{ K_{\bm{\theta}}(\bm{x}) }{ Z(\bm{\theta}) } \\
+	&= \nabla_{\bm{x}} \left( \log K_{\bm{\theta}}(\bm{x}) - \log Z(\bm{\theta}) \right) \\
+	&= \nabla_{\bm{x}} \log K_{\bm{\theta}}(\bm{x}) \\
+\end{aligned}
+\]
+
+such that knowing the kernel is sufficient for all involved calculations.
+The objective function $J$, i.e. the expected square distance between the model score function and the data score function, is defined by
+\[
+	J(\bm{\theta}) = \frac{1}{2} \int_{\mathbb{R}^d} p(\bm{x}) \norm{ S_{\bm{\theta}} (\bm{x}) - S (\bm{x}) }^2 \dif \bm{x}
+\]
+
+and the estimator is then given by
+\[
+	\hat{\bm{\theta}} = \argmin_{\bm{\theta}} J(\bm{\theta})
+\]
+
+Up until this point we replaced one problem with another, as we might have to compute an estimator of the data score function $S$ from the observed sample, 
+which is basically a non-parametric estimation problem.
+However, when the following conditions are fulfilled:
+\begin{enumerate}
+	\item $S_{\bm{\theta}}$ is sufficiently differentiable
+	\item $p$ is sufficiently differentiable
+	\item $\forall \bm{\theta}: \quad \Ex{ \norm{ S_{\bm{\theta}}(\bm{X}) }^2 } < \infty $
+	\item $\Ex{ \norm{ S(\bm{X}) }^2 } < \infty $
+	\item $\forall \bm{\theta}: \quad \lim_{\norm{\bm{x}} \to \infty} p(\bm{x}) S_{\bm{\theta}}(\bm{x}) = 0$
+\end{enumerate}
+
+then the objective function can be represented without $S$ by the following theorem:
+
+\begin{theorem}
+Under the regularity conditions above, and denoting by $S_j^{\bm{\theta}}$ the $j$-th component of $S_{\bm{\theta}}$, the objective function $J$ can be expressed as
+\[
+	J(\bm{\theta}) = \int_{\mathbb{R}^d} p(\bm{x}) \sum_{j = 1}^d \left[ \del_j S_j^{\bm{\theta}} (\bm{x}) + \frac{1}{2} S_j^{\bm{\theta}}(\bm{x})^2 \right] \dif \bm{x} + C
+\]
+
+where the constant $C$ does not depend on $\bm{\theta}$,
+\[
+	S_j^{\bm{\theta}} (\bm{x}) = \frac{\del \log K_{\bm{\theta}}(\bm{x}) }{\del \bm{x}_j }
+\]
+and 
+\[
+	\del_j S_j^{\bm{\theta}} (\bm{x}) = \frac{\del S_j^{\bm{\theta}} (\bm{x}) }{\del \bm{x}_j } = \frac{\del^2 \log K_{\bm{\theta}}(\bm{x}) }{\del \bm{x}_j^2 }
+\]
+is the partial derivative of the model score function with respect to $\bm{x}_j$.
+\end{theorem}
+
+In practice, with the dataset $\mathcal{D}$ of $n$ observations of the random vector $\bm{X}$, denoted now as $(\bm{x}( i ) )_{i = 1}^n$ to avoid confusion, 
+the sample version of $J$ is obtained from this as
+\[
+	\tilde{J}(\bm{\theta}) = \frac{1}{n} \sum_{i = 1}^n \sum_{j = 1}^d \left[ \del_j S_j^{\bm{\theta}} ( \bm{x}(i) ) + \frac{1}{2} S_j^{\bm{\theta}}( \bm{x}(i) )^2 \right] + C
+\]
+
+which is asymptotically equivalent to $J$ due to the law of large numbers. 
+So one estimates the model by minimisation of $\tilde{J}$ in the case of a real, finite sample.
+
+If we assume that the model is not degenerate, and that $K_{\bm{\theta}} > 0$ always, we have local consistency as shown by the following theorem and the corollary:
+
+\begin{theorem}
+Assume the probability density function of $\bm{X}$ follows the model $p(\cdot) = p_{\bm{\theta}^\ast}(\cdot)$ for some $\bm{\theta}^\ast$.
+Assume further that $\bm{\theta}^\ast$ is unique in this role and that $\forall \bm{\theta}, \bm{x}: \quad K_{\bm{\theta}}(\bm{x}) > 0$, then
+\[
+	J(\bm{\theta}) = 0 \quad \Leftrightarrow \quad \bm{\theta} = \bm{\theta}^\ast
+\]
+\end{theorem}
+
+Under the assumptions of the preceding Theorems, the score matching estimator obtained by minimisation of $\tilde{J}$ is consistent, 
+i.e. it converges in probability towards the true value of $\bm{\theta}$ when sample size approaches infinity, 
+assuming that the optimisation algorithm is able to find the global minimum.
+In practice, this may not be true, in particular because there may be several local minima. 
+Then, the consistency is of local nature, i.e., the estimator is consistent if the optimisation iteration is started sufficiently close to the true value. 
+Note that consistency implies asymptotic unbiasedness.
+
+
+
+
+
+

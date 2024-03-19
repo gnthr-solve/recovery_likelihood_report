@@ -1,0 +1,71 @@
+
+
+\section{Metropolis-Hastings}
+
+Let $\tilde{p}: \mathbb{R}^d \to \mathbb{R}$ be the unnormalised probability density function, of the density
+\[
+	p(\bm{x}) := \frac{ \tilde{p}(\bm{x}) }{ \int_{\Theta} \tilde{p}(\bm{x}) \dif \bm{x} }
+\]
+with a potentially intractable normalisation constant $\int_{\Theta} \tilde{p}(\bm{x}) \dif \bm{x}$.
+
+\NoCaptionOfAlgo
+\begin{algorithm}[H]
+\SetAlgoLined
+\DontPrintSemicolon
+\SetKwComment{Comment}{$\triangleright$\ }{}
+\SetAlCapSkip{1em}
+\SetAlCapNameFnt{\normalfont\normalsize}
+\caption{Metropolis-Hastings}
+
+Initialise $\bm{x}_0$ \;
+
+\For{$ k \leq n $ }{
+	sample $\hat{\bm{x}} \sim q(\hat{\bm{x}} | \bm{x}_k)$ \;
+	compute 
+	$
+		\alpha( \bm{x}_k, \hat{\bm{x}} ) 
+		= \min \{ 1, \frac{ \tilde{p}(\hat{\bm{x}}) q( \bm{x}_k | \hat{\bm{x}} ) }{ \tilde{p}(\bm{x}_k) q(\hat{\bm{x}} | \bm{x}_k) } \}
+	$
+	\;
+	sample $u \sim \mathcal{U}(0,1)$ \;
+	\uIf{$ u \leq \alpha( \bm{x}_k, \hat{\bm{x}} )$}{
+		$\bm{x}_{k+1} := \hat{\bm{x}}$ \;
+	}
+	\Else{
+		$\bm{x}_{k+1} := \bm{x}_k$ \;
+	}
+}
+\end{algorithm}
+
+We can use the unnormalised $\tilde{p}( \cdot )$ instead of $p( \cdot )$ as the normalisation constant cancels in the fraction.
+A typical proposal distribution driving the Markov chain is $q(\cdot | \bm{x}) \sim \mathcal{N}( \cdot | \bm{x}, \bm{\Sigma})$, 
+mimicking a random walk in the parameter space.
+To achieve high acceptance rates one can choose smaller proposed transitions.
+But this approach increases the traversal time and can become inefficient for high dimensional parameter spaces.
+This can imply row rates of acceptance, resulting in a highly correlated Markov chain and/or high mixing times.
+The mixing time refers to the time it takes until the chain reaches the target distribution, 
+while the correlation comes from the chain remaining in the same states when the transition is rejected.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,77 @@
+
+\section{Model Parameter Estimation}
+
+\begin{comment}
+In principle an EBM can be learned with MLE where for a dataset $(\mathbf{x}_i)_{i=1}^n$ the log-likelihood function is given as
+\[
+	log \mathcal{L}(\theta) = \frac{1}{n} \sum_{i=1}^n \log p_\theta(\mathbf{x}_i) \doteq \mathbb{E}_{ \mathbf{x} \sim p_{\text{data}} } [\log p_\theta(\mathbf{x}) ]
+\]
+
+where the gradient with respect to $\theta$ is
+
+\[
+\begin{aligned}
+	\frac{d}{d\theta} \log \mathcal{L}(\theta) 
+	&= \frac{d}{d\theta} \left[ \frac{1}{n} \sum_{i=1}^n \log p_\theta(\mathbf{x}_i) \right] \\
+	&= \frac{d}{d\theta} \left[ \frac{1}{n} \sum_{i=1}^n \log \left( \frac{1}{Z_\theta} \exp( f_\theta (\mathbf{x}_i) ) \right) \right] \\
+	&= \frac{d}{d\theta} \left[ \frac{1}{n} \sum_{i=1}^n f_\theta (\mathbf{x}_i)  - \frac{1}{n} \sum_{i=1}^n \log \left( Z_\theta \right) \right] \\
+	&= \frac{d}{d\theta} \left[ \frac{1}{n} \sum_{i=1}^n f_\theta (\mathbf{x}_i)  - \log \left( Z_\theta \right) \right] \\
+	&= \frac{d}{d\theta} \left[ \frac{1}{n} \sum_{i=1}^n f_\theta (\mathbf{x}_i)  - \log \left( \int \exp( f_\theta (\mathbf{x}) ) d\mathbf{x} \right) \right] \\
+	&= \frac{1}{n} \sum_{i=1}^n \frac{d}{d\theta} f_\theta (\mathbf{x}_i)  - \frac{d}{d\theta}\log \left( \int \exp( f_\theta (\mathbf{x}) ) d\mathbf{x} \right) \\
+\end{aligned}
+\]
+
+where by the chain rule we get that
+
+\[
+	\frac{d}{d\theta} \log \left( \int \exp( f_\theta (\mathbf{x}) ) d\mathbf{x} \right) 
+	= \frac{\frac{d}{d\theta} \int \exp( f_\theta (\mathbf{x}) ) d\mathbf{x} }{ Z_\theta }\\
+\]
+
+and assuming $\exp( f_\theta (\mathbf{x})$ is differentiable in $\theta$ for all $\mathbf{x}$ and is integrable in $\mathbf{x}$ for all $\theta$, then
+\[
+\begin{aligned}
+	\frac{\frac{d}{d\theta} \int \exp( f_\theta (\mathbf{x}) ) d\mathbf{x} }{ Z_\theta }
+	&= \frac{ \int \frac{d}{d\theta} \exp( f_\theta (\mathbf{x}) ) d\mathbf{x} }{ Z_\theta } \\
+	&= \frac{ \int \frac{d}{d\theta}f_\theta (\mathbf{x}) \exp( f_\theta (\mathbf{x}) ) d\mathbf{x} }{ Z_\theta } \\
+	&= \int \frac{d}{d\theta}f_\theta (\mathbf{x}) \frac{ \exp( f_\theta (\mathbf{x}) ) }{ Z_\theta } d\mathbf{x} \\
+	&= \mathbb{E}_{ \mathbf{x} \sim p_\theta} \left[ \frac{d}{d\theta} f_\theta (\mathbf{x}) \right] \\
+\end{aligned}
+\]
+
+The term $\frac{1}{n} \sum_{i=1}^n \frac{d}{d\theta} f_\theta (\mathbf{x}_i)$ can be rewritten as the expectation with respect to the empirical distribution i.e.
+\[
+	\frac{1}{n} \sum_{i=1}^n \frac{d}{d\theta} f_\theta (\mathbf{x}_i) = \mathbb{E}_{ \mathbf{x} \sim p_{\text{data}} } \left[ \frac{d}{d\theta} f_\theta (\mathbf{x}) \right]
+\]
+
+so the final expression we get for $\frac{d}{d\theta} \log \mathcal{L}(\theta)$ is 
+\[
+	\frac{d}{d\theta} \log \mathcal{L}(\theta) = 
+	\mathbb{E}_{ \mathbf{x} \sim p_{\text{data}} } \left[ \frac{d}{d\theta} f_\theta (\mathbf{x}) \right] 
+	- \mathbb{E}_{ \mathbf{x} \sim p_\theta} \left[ \frac{d}{d\theta} f_\theta (\mathbf{x}) \right]
+\]
+\end{comment}
+
+\NoCaptionOfAlgo
+\begin{algorithm}[H]
+\SetAlgoLined
+\DontPrintSemicolon
+\SetKwComment{Comment}{$\triangleright$\ }{}
+\SetAlCapSkip{1em}
+\SetAlCapNameFnt{\normalfont\normalsize}
+\caption{ Estimation of \bm{\theta} }
+
+Initialise $\bm{\theta}_0$ \;
+Set step schedule $(\alpha_k)_{k = 1}^N$
+
+\For{$ 1 \leq  k \leq N $ }{
+	compute $\nabla_{\bm{\theta}} \log \mathcal{L}(\bm{\theta}_k)$ \;
+	$ \bm{\theta}_{k+1} = \bm{\theta}_k + \alpha_k \nabla_{\bm{\theta}} \log \mathcal{L}(\bm{\theta}_k) $
+}
+\end{algorithm}
+
+
+
+
+
+

@@ -1,0 +1,208 @@
+
+\section{MCMC using Hamiltonian Dynamics}
+
+The idea to reconsider a distributions density as an energy landscape is the foundation of not only ULA and MALA but also of Hamiltonian Monte Carlo (HMC).
+HMC is a much more general concept however, that, in addition to the potential energy function $U$ that characterises an EBM, 
+introduces momentum variables to assign both potential as well as kinetic energy to a state via the Hamiltonian.
+The combination of these two energy functionals is then subjected to Hamiltonian dynamics to generate a trajectory to the next proposal state.
+MALA is in principle a special case of HMC where the trajectory to generate a new proposal consists of a single step.
+
+\subsection{ Hamiltonian Dynamics }
+Hamiltonian dynamics is a framework used in classical mechanics to describe the evolution of physical systems. 
+It introduces the concept of a Hamiltonian function, denoted as $H(\bm{x}, \bm{p})$,
+\[
+	H(\bm{x}, \bm{p}) = U(\bm{x}) + K(\bm{p})
+\]
+where $\bm{x}$ represents the position vector and $\bm{p}$ the momentum vector and $U$ and $K$ are called the potential and kinetic energy respectively.
+Hamiltonian dynamics are governed by the equations:
+
+\[
+\begin{aligned}
+	\frac{\dif \bm{x}}{\dif t} &= \frac{\partial H}{\partial \bm{p}} \\
+	\frac{\dif \bm{p}}{\dif t} &= -\frac{\partial H}{\partial \bm{x}} \\
+\end{aligned}
+\]
+
+For an EBM Model the potential energy function coincides with $U$, 
+and for the kernel of any other density we can do the familiar transformation $U(\bm{x}) = - \log(\tilde{f}(x))$.
+The Hamiltonian in its turn can be used as the energy function in a new EBM to define a joint density
+\[
+	P(\bm{x}, \bm{p}) = \frac{1}{Z} \exp( - H(\bm{x}, \bm{p}) ) = \frac{1}{Z} \exp( - U(\bm{x}) - K(\bm{p}) )
+\]
+
+
+\subsection{Hamiltonian Monte Carlo (HMC)}
+
+HMC is a Metropolis-Hastings sampling algorithm that employs Hamiltonian dynamics to generate new proposal states, 
+and in this way guide the exploration of the state space efficiently. 
+The simulated dynamics allow the algorithm to explore distant regions in a more coherent and directed manner compared to random-walk-based methods.
+Unlike traditional Metropolis Hastings algorithms, that often sample the proposed next state using a multivariate-normal step directly, 
+HMC samples a momentum and subsequently uses the deterministic dynamics to simulate a trajectory from the current position to the next proposal state.
+Unlike in Langevin Dynamics this trajectory can consist of multiple steps which can boost convergence speed. 
+
+A key component is to negate the momentum variables at the end of one trajectory simulation. 
+This guarantees that the proposal distribution $q$ is symmetric which makes it vanish in the Metropolis-Hastings acceptance probability
+\[
+\begin{aligned}
+	\alpha(\bm{x}, \bm{p}; \hat{\bm{x}}, \hat{\bm{p}})
+	&= \min \left(1, \frac{P(\hat{\bm{x}}, \hat{\bm{p}}) q(\bm{x}, \bm{p} | \hat{\bm{x}}, \hat{\bm{p}} ) }{P(\bm{x}, \bm{p})} q(\hat{\bm{x}}, \hat{\bm{p}} | \bm{x}, \bm{p} ) \right) \\
+	&= \min \left(1, \frac{P(\hat{\bm{x}}, \hat{\bm{p}}) }{P(\bm{x}, \bm{p})} \right) \\
+	&= \min \left(1, \frac{P(\hat{\bm{x}}, \hat{\bm{p}}) }{P(\bm{x}, \bm{p})} \right) \\
+\end{aligned}
+\]
+
+So that it can be expressed purely in terms of the respective Hamiltonians
+\[
+\begin{aligned}
+	\alpha(\bm{x}, \bm{p}; \hat{\bm{x}}, \hat{\bm{p}})
+	&= \min \left(1, \frac{P(\hat{\bm{x}}, \hat{\bm{p}}) }{P(\bm{x}, \bm{p})} \right) \\
+	&= \min \left(1, \frac{ \exp( - H(\hat{\bm{x}}, \hat{\bm{p}}) ) }{ \exp( - H(\bm{x}, \bm{p}) ) } \right) \\
+	&= \min \left(1, \exp( H(\bm{x}, \bm{p}) - H(\hat{\bm{x}}, \hat{\bm{p}}) ) \right) \\
+\end{aligned}
+\]
+
+HMC's ability to use gradient information and simulate deterministic dynamics makes it a powerful tool for efficient exploration of complex, high-dimensional parameter spaces.
+
+
+
+Set with the parameters
+\begin{enumerate}
+	\item Desired number of samples: $N$
+	\item Number of leapfrog steps: $L$
+	\item Step size for leapfrog integration: $\varepsilon$
+	\item Mass matrix for kinetic energy: $\bm{M}$
+\end{enumerate}
+
+and with concrete kinetic energy function $K(\bm{p}) = \frac{ \bm{p}^T M \bm{p} }{2}$
+
+
+
+\NoCaptionOfAlgo
+\begin{algorithm}[H]
+\SetAlgoLined
+\DontPrintSemicolon
+\SetKwComment{Comment}{$\triangleright$\ }{}
+\SetAlCapSkip{1em}
+\SetAlCapNameFnt{\normalfont\normalsize}
+\caption{Hamiltonian Monte Carlo Algorithm $(N, L, \varepsilon, \bm{M})$}
+
+Initialise: 
+$\bm{x}_0$ \;
+$ \bm{p}_0 \sim \mathcal{N}(0, \bm{M}) $ \;
+
+\For{$ i \leq N $ }{
+
+	$ \hat{\bm{x}} = \bm{x}_i $ \;
+	
+	sample Momentum:
+	$ \hat{\bm{p}} \sim \mathcal{N}(0, \bm{M}) $ \;
+	
+	% Make a half step for momentum at the beginning
+	$ \hat{\bm{p}} = \hat{\bm{p}} - \varepsilon \frac{\nabla U(\hat{\bm{x}})}{2} $ \;
+	
+	leapfrog Integration:\\
+	\For{$ k \leq L-1 $ }{
+		$\hat{\bm{x}} = \hat{\bm{x}} + \varepsilon \hat{\bm{p}}$\;
+		$\hat{\bm{p}} = \hat{\bm{p}} - \varepsilon \nabla U(\hat{\bm{x}})$\;
+	}
+	%missing full step for position
+	$\hat{\bm{x}} = \hat{\bm{x}} + \varepsilon \hat{\bm{p}}$\;
+	
+	%Make a half step for momentum at the end
+	$ \hat{\bm{p}} = \hat{\bm{p}} - \varepsilon \frac{\nabla U(\hat{\bm{x}})}{2} $ \;
+	
+	negate Momentum:
+	$\hat{\bm{p}} = - \hat{\bm{p}}$ \;
+	
+	evaluate Hamiltonian for the current point: 
+	$H(\bm{x}_i, \bm{p}_i) = U(\bm{x}_i) + K(\bm{p}_i)$ \;
+	
+	evaluate Hamiltonian for the proposed point:
+	$H(\hat{\bm{x}}, \hat{\bm{p}} ) = U(\hat{\bm{x}}) + K(\hat{\bm{p}})$ \;
+	
+	compute 
+	$
+		\alpha \left( (\bm{x}_i, \bm{p}_i), (\hat{\bm{x}}, \hat{\bm{p}}) \right) 
+		= \min \left \{ 1, \exp ( H(\bm{x}_i, \bm{p}_i) - H( \hat{\bm{x}}, \hat{\bm{p}} ) ) \right \}
+	$
+	\;
+	sample $u \sim \mathcal{U}(0,1)$ \;
+	\uIf{$ u \leq \alpha \left( (\bm{x}_i, \bm{p}_i), (\hat{\bm{x}}, \hat{\bm{p}}) \right)$}{
+		$\bm{x}_{i+1} := \hat{\bm{x}}$ \;
+	}
+	\Else{
+		$\bm{x}_{i+1} := \bm{x}_i$ \;
+	}
+}
+
+\end{algorithm}
+
+
+
+
+\begin{comment}
+\subsection{ Hamiltonian Monte Carlo Algorithm}
+
+\begin{enumerate}
+\item \textbf{Initialize:}
+   - Choose a starting point $\bm{x}_0$.
+   - Sample initial momentum $\bm{p}_0$ from a suitable distribution.
+
+\item \textbf{Simulate Dynamics:}
+   - Integrate Hamiltonian dynamics for a fixed duration using numerical methods (e.g., leapfrog integration). This simulates the evolution of the system and preserves its energy.
+   - The result is a proposed point $(\bm{x}', \bm{p}')$ in the state space.
+
+\item \textbf{Metropolis Hastings Acceptance:}
+   - Compute the joint energy $E(\bm{x}, \bm{p}) = -\log(\pi(\bm{x}) \cdot \mathcal{N}(\bm{p} | 0, M))$, where $\pi(\bm{x})$ is the target distribution and $\mathcal{N}(\bm{p} | 0, M)$ is the chosen momentum distribution.
+   - Accept the proposal $(\bm{x}', \bm{p}')$ with probability $\min\left(1, \exp(E(\bm{x}, \bm{p}) - E(\bm{x}', \bm{p}'))\right)$.
+
+\item \textbf{Repeat:}
+   - If accepted, set $\bm{x}_{\text{new}} = \bm{x}'$; otherwise, $\bm{x}_{\text{new}} = \bm{x}_{\text{old}}$.
+   - Sample new momentum for the next iteration.
+
+\end{enumerate}
+
+\subsection{ Formulas}
+
+- \textbf{Hamiltonian Function:}
+  \[
+  H(\bm{x}, \bm{p}) = -\log(\pi(\bm{x}) \cdot \mathcal{N}(\bm{p} | 0, M))
+  \]
+
+- \textbf{Hamilton's Equations:}
+  \[
+  \begin{aligned}
+  \frac{\dif \bm{x}}{\dif t} &= \frac{\partial H}{\partial \bm{p}} \\
+  \frac{\dif \bm{p}}{\dif t} &= -\frac{\partial H}{\partial \bm{x}}
+  \end{aligned}
+  \]
+
+- \textbf{Metropolis Hastings Acceptance Probability:}
+  \[
+  \min\left(1, \exp(E(\bm{x}, \bm{p}) - E(\bm{x}', \bm{p}'))\right)
+  \]
+
+HMC's ability to use gradient information and simulate deterministic dynamics makes it a powerful tool for efficient exploration of complex, high-dimensional parameter spaces.
+
+
+\end{comment}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

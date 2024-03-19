@@ -1,0 +1,74 @@
+%Basic Formatting and Packages---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\usepackage{amsmath} 
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{mathtools}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{verbatim}
+\usepackage{csvsimple}
+\usepackage{subcaption}
+\usepackage[font=tiny,labelfont=bf]{caption}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref}
+
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage[ruled, noend]{algorithm2e}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes, shapes.geometric, positioning, arrows.meta, fit, snakes, calc, graphs, graphs.standard}
+
+\geometry{left=2cm,right=2cm,top=2.5cm,bottom=2.5cm}
+
+
+\lstset{basicstyle=\footnotesize}
+
+
+
+\title{\textbf{Likelihood Estimation Comparison for Energy Based Models: A Framework}}
+    \author{
+        \parbox{\linewidth}{\centering
+            Manuel Günther
+        }
+     }
+    \date{\today}
+
+\usepackage{newunicodechar}
+\newunicodechar{⁠}{\nolinebreak}
+
+
+\input{content/def}
+\begin{document}
+%Inputs from content----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+\maketitle
+\tableofcontents
+
+\input{content/introduction}
+%\input{content/score_matching}
+\input{content/energy_based_models}
+\input{content/distributions}
+\input{content/metropolis_hastings}
+\input{content/langevin_dynamics}
+\input{content/hamiltonian_monte_carlo}
+\input{content/maximum_likelihood}
+\input{content/recovery_likelihood}
+\input{content/metrics}
+
+
+%\input{content/output}
+
+%\input{content/references}
+
+
+
+
+\end{document}

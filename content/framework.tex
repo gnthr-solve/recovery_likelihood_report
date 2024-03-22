@@ -1,24 +1,103 @@
 
-\section{Results / Assessment}
+%\texttt{make\_classification}
+\section{Framework}
 
-As the MC estimates, used to approximate the gradient of the likelihood are based on random samples of the model distribution and the data distribution respectively,
-are themselves random variables, the entire estimation process is stochastic in nature and we can view it as a stochastic process.
-While there is a lot of theory developed for stochastic processes, 
-the complexity contributed by the components of the learning procedure makes it very hard to derive the parameter process analytically.
-Even assuming that the samplers for the model provide bona fide samples of the model distribution, 
-the randomness of the model samples and of the batch selection comes in in the form of gradients of the likelihood.
-It is then warped by the optimisation procedure, which could itself be stochastic algorithm.
+The effectiveness of an inference procedure depends on many factors and components, 
+and with so many variables in play general conclusions are difficult to obtain from empirical tests.
+Several models and settings were tested in this project, but the results obtained may not translate to other circumstances.
 
-Hence there are a lot of dependencies and the evaluation here is empirical and, due to the vast space of hyper parameters and potential choices in strategy,
-necessarily not comprehensive.
+So while there is value in conducting these experiments and conclusions can be drawn from them, 
+providing the infrastructure to conduct specialised experiments in the future might be a more fruitful contribution.
+Thus a central goal of this project was to create a code framework, 
+that facilitates setting up and combining components in a way that can be tailored to circumstances of interest which are not discussed here.
+
+Designing code for generality is a difficult task but the created modules should allow tests of the RL and ML estimation techniques for a variety of energy based models.
+In the design special care was taken to keep the components modular and extensible wherever possible, 
+so hopefully the framework can not only be used to reproduce the results discussed here but serve as a basis for further investigation.
+Another key objective in the design was maximising computational efficiency in the major components.
+Thus all of the core components operate purely on \texttt{torch.Tensor}s and allow for leveraging the optimised \texttt{torch} GPU processing.
 
 
-\subsection{Procedure}
+\subsection{The Energy Model}
 
-Since the sequence of parameter estimates at every iteration is essentially a realisation of this stochastic process, the error metrics can be viewed as one as well.
-Suppose for an experiment a full training procedure is conducted with a total number of $n$ iterations across epochs.
-Because of the stochastic nature of the training we repeat the training procedure $m$ times, with the same hyper parameters, 
-to get an impression of the parameter estimation process as a whole.
-For any error metric $M$ we then obtain a set of $m$ time series of length $n$ and can write $M_i (j)$ for the value of the metric for training run $i$ at iteration $j$.
+The estimation process consists of calculating the respective likelihood gradients that a \texttt{torch} optimiser then uses to update the model parameters during training.
+These gradients are obtained as Monte Carlo estimates of the expectations show in chapter ( ).
 
-Now back to the idea, suppose I want to plot two types of graphs for these time series. One where we simply plot the parameter error of the different runs versus time or number of iterations. That plot would have $m$ lines, one for each training run. Next to that plot I would like to add one where I average the error over iterations, i.e. $mean_j = \sum_{i = 1}^m e_i(j)$ where $e_i(j)$ would be the error of the $i$th run at iteration $j$, and also a standard deviation, calculated in a similar way, that I would show as a grey belt around the mean (for these two types of plot I actually already have functions, but not hook classes). Now I change the set of hyperparameters (e.g. change the learning rate or the sampler) and run the experiment again for $n$ iterations and $m$ training runs. Then the I would put the same plot type as before below the previous one in the plot matrix with corresponding annotations for what changed.
+For the model part samples from the model distribution need to be generated and their parameter gradients evaluated batch-wise.
+Here the model samples are produced via MCMC samplers whose iterations require evaluating the energy functional and the gradient with respect to the input of that functional.
+Thus the model class needed methods for calculating the energy functional $U_{\bm{\theta}} (\bm{x})$, 
+the gradient with respect to the input $\nabla_{\bm{x}} U_{\bm{\theta}} (\bm{x})$ 
+and the gradient with respect to the parameters evaluated at the input $\nabla_{\bm{\theta}} U_{\bm{\theta}} (\bm{x})$.
+
+This is achieved by the \texttt{EnergyModel} base class, which inherits from \texttt{torch.nn.Module}, 
+to integrate well with the machine learning architecture \texttt{torch} provides.
+It initialises with an empty \texttt{params} dictionary of type \texttt{torch.nn.ParameterDict} and has the methods
+\begin{enumerate}
+	\item \texttt{forward(x)} which relays calls to \texttt{energy}
+	\item \texttt{energy(x)} corresponding to $U_{\bm{\theta}} (\bm{x})$
+	\item \texttt{energy\_grad(x)} corresponding to $\nabla_{\bm{x}} U_{\bm{\theta}} (\bm{x})$
+	\item \texttt{avg\_param\_grad(x)} which directly calculates $\frac{1}{n} \sum_{j=1}^n \nabla_{\bm{\theta}} U_{\bm{\theta}} (\bm{x}_j)$
+\end{enumerate}
+
+where \texttt{x} can be either a single input or a batch of inputs.
+The method \texttt{avg\_param\_grad} stands out here as for a batch it does not produce a matrix of gradients, but already averages the gradients across samples,
+effectively calculating the MC estimate for $\mathbb{E}_{ \bm{x} \sim p_{\bm{\theta}}} \left[ \frac{\dif}{\dif \bm{\theta}} U_{\bm{\theta}} (\bm{x}) \right]$ directly.
+
+Any desired energy model, subclassing \texttt{EnergyModel}, needs only inscribe its named parameters in the \texttt{params} dictionary and override the \texttt{energy} method.
+The \texttt{energy\_grad} and \texttt{avg\_param\_grad} methods can be overridden, if an analytical representation of these gradients is available, 
+or inherited from the base class, where they leverage \texttt{torch}s automatic differentiation capability.
+The sampler and ML classes can use any instance of such a model directly. 
+
+
+\subsection{Recovery Adapter}
+
+For RL estimation it is more complicated as the gradients are taken with respect to the conditional energy that depends on the perturbed samples 
+and requires extra terms, that are derived from the normal distribution of the noise.
+One approach could have been to create parallel class hierarchies and create a regular and a conditional class for every model, training and evaluating them separately.
+This would have made the pipeline and evaluation more complicated however, and since the conditional version is only relevant during training, 
+there would have been a lot of boilerplate.
+
+The chosen solution for this problem is utilising the Object Adapter design pattern with the \texttt{RecoveryAdapter} class.
+Essentially the adapter both inherits from \texttt{EnergyModel} and incorporates an instance of this type at the same time,
+overriding the methods by relaying the calls first to this instance and then adding the conditional terms.
+It has one extra method that allows to set a batch of perturbed samples which are utilised in these conditional terms.
+At every training iteration a perturbed version of the current batch of training data is created by adding Gaussian noise in the RecoveryLikelihood class 
+and passing them to the adapted model before generating samples and calculating the parameter gradient.
+The major benefits of this approach are that, for one any model can be adapted directly, without having to design an additional class,
+and that after training the actual model can simply be retrieved from within the adapter and the adapter can be discarded without the need for transformation.
+
+
+The ADAM optimiser (cite) used here involves the learning rate $\alpha$ in form of a coefficient in front of a linearly transformed form gradient
+\[
+	\bm{\theta}_{k+1} = \bm{\theta}_k - \alpha f( \nabla_{\bm{\theta}} \text{NLL}(\bm{\theta}_k) )
+\]
+
+and as we use $\frac{1}{n} \nabla_{\bm{\theta}} \text{NLL}(\bm{\theta}_k)$ the de-facto learning rate changes with the batch size, 
+from $\alpha$ to something like $\frac{\alpha}{n}$.
+So the recommended default learning rate of $\alpha = 10^{-3}$ should be multiplied by the batch size i.e. we use $\alpha = n 10^{-3}$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

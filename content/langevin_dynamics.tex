@@ -1,6 +1,6 @@
-\section{Langevin Dynamics}
+\subsection{Langevin Dynamics}
 
-\subsection{Langevin Equation}
+\subsubsection{Langevin Equation}
 The Langevin equation describes the evolution of a particle's position in a dissipative medium and is given by:
 
 \[
@@ -12,7 +12,7 @@ The Langevin equation combines deterministic motion with a stochastic term to mo
 It's widely used in statistical mechanics to describe the behaviour of particles under the influence of both deterministic and random forces. 
 
 
-\subsection{Langevin Diffusion}
+\subsubsection{Langevin Diffusion}
 The Langevin diffusion process is a stochastic differential equation (SDE) that represents the continuous-time evolution of a particle's position and is given by:
 
 \[
@@ -23,7 +23,7 @@ where $U(x)$ is the potential energy at position $x$ and $\bm{B}$ is a Brownian 
 Langevin diffusion describes the random motion of a particle in a potential field, incorporating the effects of both deterministic drift and stochastic noise.
 
 
-\subsection{Invariant Measure via Fokker-Planck Equation} 
+\subsubsection{Invariant Measure via Fokker-Planck Equation} 
 Consider a simpler form of the Langevin diffusion SDE:
 \[
 	\dif \bm{X}_t = - \nabla U(\bm{X}_t) \dif t + \sqrt{2} \dif \bm{B}_t
@@ -79,7 +79,7 @@ means the stationary density of the Langevin diffusion will be
 i.e. the density of the stationary distribution of this Langevin diffusion process corresponds to the normalised version of $\tilde{p}$.
 
 
-\subsection{Unadjusted Langevin Algorithm (ULA)}
+\subsubsection{Unadjusted Langevin Algorithm (ULA)}
 
 The problem in general is that we do not have a closed form solution for the Langevin diffusion SDE, and cannot directly sample from the process it defines.
 The straightforward approach then is to simulate the process by discretising it and sampling from the discrete approximation instead.
@@ -116,10 +116,19 @@ Initialise $\bm{x}_0$ \;
 \end{algorithm}
 
 This scheme incurs a discretisation/integration error however that could change the stationary distribution.
+Guarantees for strong convergence are given only under some regularity conditions (see \cite{Baldi2017} chapter 11.2), namely that $\forall \bm{x}, \bm{y}:$
+\[
+\begin{aligned}
+	& \norm{\nabla U( \bm{x} ) } \leq M (1 + \norm{\bm{x}}) \\
+	& \norm{\nabla U( \bm{y} ) - \nabla U( \bm{x} )} \leq L \norm{\bm{x} - \bm{y}} \\
+\end{aligned}
+\]
+
+for some constants $M, L$. This is a condition that for example the polynomial distribution introduced earlier does not fulfil.
 This problem gives rise to the Metropolis adjusted Langevin algorithm that introduces an acceptance probability to ensure convergence to the desired stationary distribution.
 
 
-\subsection{Metropolis Adjusted Langevin Algorithm (MALA)}
+\subsubsection{Metropolis Adjusted Langevin Algorithm (MALA)}
 
 The MALA method is a Metropolis-Hastings algorithm where the proposal density is based on the Langevin diffusion.
 We can now adapt our point of view and consider the next point $\bm{X}_{n+1}$ as the suggestion of our proposal density.
@@ -268,7 +277,7 @@ Together we get the acceptance probability
 \]
 
 
-\subsection{Sampling Accuracy}
+\subsubsection{Sampling Accuracy}
 
 It is important to note here that in practice we can not run the corresponding algorithm for an indefinite amount of time.
 A sampler based on MALA, ULA or HMC is used for generating training samples from the parametric model.

@@ -1,5 +1,5 @@
 
-\section{MCMC using Hamiltonian Dynamics}
+\subsection{MCMC using Hamiltonian Dynamics}
 
 The idea to reconsider a distributions density as an energy landscape is the foundation of not only ULA and MALA but also of Hamiltonian Monte Carlo (HMC).
 HMC is a much more general concept however, that, in addition to the potential energy function $U$ that characterises an EBM, 
@@ -7,7 +7,7 @@ introduces momentum variables to assign both potential as well as kinetic energy
 The combination of these two energy functionals is then subjected to Hamiltonian dynamics to generate a trajectory to the next proposal state.
 MALA is in principle a special case of HMC where the trajectory to generate a new proposal consists of a single step.
 
-\subsection{ Hamiltonian Dynamics }
+\subsubsection{ Hamiltonian Dynamics }
 Hamiltonian dynamics is a framework used in classical mechanics to describe the evolution of physical systems. 
 It introduces the concept of a Hamiltonian function, denoted as $H(\bm{x}, \bm{p})$,
 \[
@@ -31,7 +31,7 @@ The Hamiltonian in its turn can be used as the energy function in a new EBM to d
 \]
 
 
-\subsection{Hamiltonian Monte Carlo (HMC)}
+\subsubsection{Hamiltonian Monte Carlo (HMC)}
 
 HMC is a Metropolis-Hastings sampling algorithm that employs Hamiltonian dynamics to generate new proposal states, 
 and in this way guide the exploration of the state space efficiently. 

@@ -1,9 +1,142 @@
 
-\section{Distributions}
+\section{Test Distributions}
 
-Let $X: \Omega \to \mathbb{R}$ or $\bm{X}: \Omega \to \mathbb{R}^d$ be a random variable or a random vector respectively,
+The models corresponding to the distributions, that are introduced in the following, will be explored in the experiments in the results section.
+This is just a small selection, that will not cover many interesting questions or potential test cases, 
+so the reader is invited to customise the framework, introduced later in this report, by adding a new model they consider interesting.
+In the following, let $X: \Omega \to \mathbb{R}$ or $\bm{X}: \Omega \to \mathbb{R}^d$ be a random variable or a random vector respectively,
 with the respective distribution.
 
+
+\subsection{Multivariate Normal Distribution}
+
+The multivariate normal distribution is a great place to start as it is ubiquitous, easy to handle and serves as a base component for many complex models and algorithms.
+For mean $\bm{\mu} \in \mathbb{R}^d$ and covariance $\Sigma \in \mathbb{R}^{d \times d}$ we say $X$ follows a multivariate Gaussian 
+or normal distribution $X \sim \mathcal{N}(\bm{\mu}, \Sigma)$, if its probability density function is given by:
+%\textbf{Probability Density Function (pdf):}
+\[
+	f_X(\bm{x} | \bm{\mu}, \Sigma) = \frac{1}{(2\pi)^{n/2}|\Sigma|^{1/2}} \exp\left(-\frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu})\right)
+\]
+
+From this density one can obtain several components used later in sampling and estimation:
+\textbf{Kernel:}
+\[
+	K_X (\bm{x}) = \exp \left( -\frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right)
+\]
+
+\textbf{Energy Function:}
+\[
+\begin{aligned}
+	U(\bm{x}) &= - \log( K_X (\bm{x}) ) \\
+	&= - \log( \exp \left( -\frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right) ) \\
+	&= \left( \frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right)
+\end{aligned}
+\]
+
+\textbf{Gradient of Energy Function with respect to $\bm{x}$:}
+\[
+\begin{aligned}
+	\nabla U(\bm{x}) &= \nabla \left( \frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right) \\
+	&= \Sigma^{-1} (\bm{x} - \bm{\mu}) \\
+\end{aligned}
+\]
+
+\textbf{Gradient of Energy Function with respect to $\bm{\mu}$:}
+\[
+\begin{aligned}
+	\nabla_{\bm{\mu}} U(\bm{x}) &= \nabla_{\bm{\mu}} \left( \frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right) \\
+	&= \Sigma^{-1} (\bm{\mu} - \bm{x}) \\
+\end{aligned}
+\]
+
+The partial derivatives of the energy functional with respect to $\Sigma_{i,j}$ however are not directly obtainable as there is no general form of $\Sigma^{-1}$ available.
+Fortunately the gradient with respect to $\Sigma$ can still be obtained effectively with automatic differentiation, that is leveraged by the employed framework.
+
+
+\subsection{Gaussian Mixture Distribution (GMD)}
+
+Gaussian mixture distributions make for simple but sufficiently complex distribution for our parameter estimation testing process.
+A GMD is a random vector  $\bm{X} : \Omega \to \mathbb{R}^d$, whose density is the weighted sum of the densities $f_i : \mathbb{R}^d \to \mathbb{R}$, 
+of $m$ Gaussian random vectors $\bm{Z}_i \sim \mathcal{N}(\bm{\mu}_i , \Sigma_i )$ with corresponding weights $w_i \in (0, 1)$ such that $\sum_{i = 1}^m w_i$.
+The density is given by
+\[
+	p_{\bm{\theta}} (\bm{x}) := \sum_{i = 1}^m w_i f_i(\bm{x})
+\]
+
+where the weights, means and covariances are aggregated in the parameter $\bm{\theta}$ for convenience.
+For each $i \in [m]$ the density $f_i$ can be split in two parts, namely the kernel, which is denoted as $K_i$, and the normalisation constant $Z_i$, i.e.
+\[
+	f_i (\bm{x}) 
+	= \underbrace{ \frac{1}{\sqrt{(2\pi)^{d} |\Sigma_i |}} }_{=: Z_i} 
+	\underbrace{ \exp \left( - \frac{1}{2} (\bm{x} - \bm{\mu}_i)^T \Sigma_i^{-1} (\bm{x} - \bm{\mu_i}) \right) }_{=: K_i (\bm{x})}
+\]
+
+and with these one can rewrite the density as
+\[
+\begin{aligned}
+	p_{\bm{\theta}} (\bm{x}) 
+	&= \sum_{i = 1}^m w_i \frac{K_i(\bm{x})}{Z_i} \\
+	&= \sum_{i = 1}^m \frac{ w_i (\prod_{j \neq i} Z_j ) K_i(\bm{x}) }{ \prod_{j = 1}^m Z_j } \\
+	&= \frac{ \sum_{i = 1}^m w_i (\prod_{j \neq i} Z_j ) K_i(\bm{x}) }{ \prod_{j = 1}^m Z_j } \\
+\end{aligned}
+\]
+
+By defining 
+\[
+	K_{\bm{\theta}} (\bm{x}) = \sum_{i = 1}^m w_i (\prod_{j \neq i} Z_j ) K_i(\bm{x})
+\]
+
+we obtain this expression for the energy $U_{\bm{\theta}}$:
+\[
+\begin{aligned}
+	U_{\bm{\theta}} (\bm{x}) 
+	&= - \log(K_{\bm{\theta}} (\bm{x}) )  \\
+	&= \log( \frac{ 1 }{ \sum_{i = 1}^m w_i (\prod_{j \neq i} Z_j ) K_i(\bm{x})} )\\
+\end{aligned}
+\]
+
+Here neither the gradient of $U_{\bm{\theta}}$ w.r.t. the inputs $\bm{x}$ nor w.r.t. to the parameters $\bm{\theta}$ is simple to calculate,
+and hence the framework leverages the automatic differentiation capacity of \texttt{pytorch} for both of these.
+
+
+\subsection{Univariate Polynomial Energy}
+
+A polynomial can serve as an energy functional for an EBM and here, instead of deriving the energy from the density, the distribution is defined via the energy directly.
+This is also the more common approach in practice, where typically an energy is defined to create a distribution.
+Let $m \in \mathbb{N}$ and $\forall i \in [m]: w_i \in \mathbb{R}$ and for $x \in \mathbb{R}$ define the energy functional as
+\[
+	U_{\bm{w}} (x) := \sum_{i = 1}^m w_i x^i .
+\]
+
+Then the density is given by
+\[
+	p_{\bm{w}} (x) := \frac{ \exp( - \sum_{i = 1}^m w_i x^i ) }{ Z_{\bm{w}} }
+\]
+
+where $Z_{\bm{w}}$ can, in general, only be approximated numerically.
+In this case it is easy to derive the analytical gradients of $U_{\bm{w}}$ directly.
+
+Gradient of $U_{\bm{w}}$ with respect to $x$:
+\[
+	\frac{ \dif }{ \dif x} U_{\bm{w}} (x) := \sum_{i = 1}^{m} i w_i x^{i -1}
+\]
+
+Gradient of $U_{\bm{w}}$ with respect to $\bm{w}$:
+\[
+	\nabla_{\bm{w}} U_{\bm{w}} (x) := \sum_{i = 1}^{m} \bm{e}_i x^i
+\]
+
+where $\bm{e}_i = (\delta_{i, j})_{j=1}^m$ is the $i$th unit vector in $\mathbb{R}^m$.
+
+
+
+
+
+
+
+
+
+\begin{comment}
 
 \subsection{The Exponential Family}
 
@@ -47,100 +180,7 @@ The gradient w.r.t. the parameter similarly becomes
 	\nabla_{\bm{\theta}} U_{\bm{\theta}}(\bm{x}) = - \phi(\bm{x})^T  J_{\eta} (\bm{\theta}) 
 \]
 
-
-\subsection{Multivariate Normal Distribution}
-
-The multivariate normal distribution is used a lot in the process of this report, so we state some important properties explicitly here.
-For mean $\bm{\mu} \in \mathbb{R}^d$ and standard deviation $\Sigma \in \mathbb{R}^{d \times d}$ we say $X$ follows a multivariate Gaussian 
-or normal distribution $X \sim \mathcal{N}(\bm{\mu}, \Sigma)$, if its probability density function is given by:
-\textbf{Probability Density Function (pdf):}
-\[
-	f_X(\bm{x} | \bm{\mu}, \Sigma) = \frac{1}{(2\pi)^{n/2}|\Sigma|^{1/2}} \exp\left(-\frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu})\right)
-\]
-
-\textbf{Kernel:}
-\[
-	K_X (\bm{x}) = \exp \left( -\frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right)
-\]
-
-\textbf{Energy Function:}
-\[
-\begin{aligned}
-	U(\bm{x}) &= - \log( K_X (\bm{x}) ) \\
-	&= - \log( \exp \left( -\frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right) ) \\
-	&= \left( \frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right)
-\end{aligned}
-\]
-
-\textbf{Gradient of Energy Function with respect to $\bm{x}$:}
-\[
-\begin{aligned}
-	\nabla U(\bm{x}) &= \nabla \left( \frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right) \\
-	&= \Sigma^{-1} (\bm{x} - \bm{\mu}) \\
-\end{aligned}
-\]
-
-\textbf{Gradient of Energy Function with respect to $\bm{\mu}$:}
-\[
-\begin{aligned}
-	\nabla_{\bm{\mu}} U(\bm{x}) &= \nabla_{\bm{\mu}} \left( \frac{1}{2} (\bm{x} - \bm{\mu})^T \Sigma^{-1} (\bm{x} - \bm{\mu}) \right) \\
-	&= \Sigma^{-1} (\bm{\mu} - \bm{x}) \\
-\end{aligned}
-\]
-
-The partial derivatives of the energy functional with respect to $\Sigma_{i,j}$ however are not directly obtainable as there is no general form of $\Sigma^{-1}$ available.
-Thus it might be preferable for experiments to use a diagonal covariance matrix where this derivative could be directly stated.
-
-
-\subsection{Gaussian Mixture Distribution (GMD)}
-
-Gaussian mixture distributions make for simple but sufficiently complex distribution for our parameter estimation testing process.
-A GMD is a random vector  $\bm{X} : \Omega \to \mathbb{R}^d$, whose density is the weighted sum of the densities $f_i : \mathbb{R}^d \to \mathbb{R}$, 
-of $m$ independent (?) Gaussian random vectors $\bm{Z}_i \sim \mathcal{N}(\bm{\mu}_i , \Sigma_i )$ with corresponding weights $w_i \in (0, 1)$:
-\[
-	p_{\bm{\theta}} (\bm{x}) := \sum_{i = 1}^m w_i f_i(\bm{x})
-\]
-
-where we aggregate the weights, means and covariances in the parameter $\bm{\theta}$ for convenience.
-For each $i \in [m]$ we can split the density $f_i$ in two parts, namely the kernel which, we denote as $K_i$, and the normalisation constant $Z_i$, i.e.
-\[
-	f_i (\bm{x}) 
-	= \underbrace{ \frac{1}{\sqrt{(2\pi)^{d} |\Sigma_i |}} }_{=: Z_i} 
-	\underbrace{ \exp \left( - \frac{1}{2} (\bm{x} - \bm{\mu}_i)^T \Sigma_i^{-1} (\bm{x} - \bm{\mu_i}) \right) }_{=: K_i (\bm{x})}
-\]
-
-and rewrite the density with these as
-\[
-\begin{aligned}
-	p_{\bm{\theta}} (\bm{x}) 
-	&= \sum_{i = 1}^m w_i \frac{K_i(\bm{x})}{Z_i} \\
-	&= \sum_{i = 1}^m \frac{ w_i (\prod_{j \neq i} Z_j ) K_i(\bm{x}) }{ \prod_{j = 1}^m Z_j } \\
-	&= \frac{ \sum_{i = 1}^m w_i (\prod_{j \neq i} Z_j ) K_i(\bm{x}) }{ \prod_{j = 1}^m Z_j } \\
-\end{aligned}
-\]
-
-By defining 
-\[
-	K_{\bm{\theta}} (\bm{x}) = \sum_{i = 1}^m w_i (\prod_{j \neq i} Z_j ) K_i(\bm{x})
-\]
-
-we obtain this expression for the energy $U_{\bm{\theta}}$:
-\[
-\begin{aligned}
-	U_{\bm{\theta}} (\bm{x}) 
-	&= - \log(K_{\bm{\theta}} (\bm{x}) )  \\
-	&= \log( \frac{ 1 }{ \sum_{i = 1}^m w_i (\prod_{j \neq i} Z_j ) K_i(\bm{x})} )\\
-\end{aligned}
-\]
-
-Here neither the gradient of $U_{\bm{\theta}}$ w.r.t. the inputs $\bm{x}$ nor w.r.t. to the parameters $\bm{\theta}$ is simple to calculate,
-and hence we will leverage the automatic differentiation capacity of pytorch for these.
-
-
-
-
-
-\begin{comment}
+%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 where the weights must satisfy $\sum_i w_i = 1$. If we aggregate the weights into a vector $\bm{w} \in (0, 1)^m$ 
 and the component density functions into a vector $\bm{f}$, we can write the density of $\bm{X}$ as:
@@ -160,6 +200,7 @@ While we don't have a simple expression for the energy functional we can still o
 \end{aligned}
 \]
 
+%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 \subsection{Gaussian Distributions}
 
@@ -260,6 +301,7 @@ or normal distribution $X \sim \mathcal{N}(\bm{\mu}, \Sigma)$, if its probabilit
 \end{aligned}
 \]
 
+%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 \subsection{Gamma Distribution}
@@ -298,6 +340,7 @@ where $\Gamma$ is the gamma function.
 	\frac{\dif U(x)}{\dif x} = \frac{ \dif }{ \dif x } \beta x -  \frac{ \dif }{ \dif x } (\alpha - 1) \log x = \beta - \frac{\alpha - 1}{x} 
 \]
 
+%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -349,6 +392,7 @@ where $\Gamma$ is the gamma function.
 \]
 
 
+%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 2. **Poisson Distribution:**

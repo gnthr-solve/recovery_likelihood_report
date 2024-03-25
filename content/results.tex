@@ -3,22 +3,164 @@
 
 As the MC estimates, used to approximate the gradient of the likelihood are based on random samples of the model distribution and the data distribution respectively,
 are themselves random variables, the entire estimation process is stochastic in nature and we can view it as a stochastic process.
+
+Since the sequence of parameter estimates at every iteration is essentially a realisation of this stochastic process, the error metrics can be viewed as one as well.
+Suppose for an experiment a full training procedure is conducted with a total number of $n$ iterations across epochs.
+Because of the stochastic nature of the training the training procedure is repeated $m$ times, with the same hyper parameters, 
+to get an impression of the parameter estimation process as a whole.
+For any error metric $M$ we then obtain a set of $m$ time series of length $n$ and can write $M_i (j)$ for the value of the metric for training run $i$ at iteration $j$.
+So the comparisons in the following are done by assessing and plotting the development of the error measures or likelihood values as stochastic processes,
+and by their final parameter estimate.
+
+
+\subsection{Remarks on Hyperparameters}
+
+Assessing performance of learning in this context is complicated a lot by the large number of hyperparameters 
+and the fact that the best choice of these is typically model dependent.
+In order to simplify the task and level the playing field some are thus chosen as fixed.
+In all experiments the used optimiser is ADAM \cite{Kingma2014AdamAM} and the learning rate is fixed to $\alpha = 10^{-3}$ as recommended in the paper.
+In ADAM $\alpha$ is used in form of a coefficient in front of a linearly transformed form of the gradient
+\[
+	\bm{\theta}_{k+1} = \bm{\theta}_k - \alpha f( \nabla_{\bm{\theta}} \text{NLL}(\bm{\theta}_k) )
+\]
+
+and as the framework uses the MC estimates directly the gradient is $\frac{1}{n} \nabla_{\bm{\theta}} \text{NLL}(\bm{\theta}_k)$, 
+and thus the de-facto learning rate changes with the batch size, from $\alpha$ to something like $\frac{\alpha}{n}$.
+The batch size is also set fixed to $200$ samples per batch so the learning rate is set at $\alpha = \frac{200}{10^{-3}} = 0.2$
+This learning rate may not be the optimal choice for any of the tested models, but makes comparisons easier and more direct.
+
+The number of epochs is set to $10$ and with a randomly loaded dataset of $10^4$ samples.
+Thus the resulting total number of training iterations for a complete training run is $500$.
+All samplers require a starting batch which is set to zeros.
+
+The choice of the sampling step size $\varepsilon$ is varied in experiments, with some exceptions for the ULA sampler. 
+Settings for ULA sampler that were too large or small for the problem often led to divergence or a breakdown of the training procedure.
+
+
+\subsection{Multivariate Gaussian Model}
+Target parameters:
+\[
+\begin{aligned}
+	\mu &= \begin{pmatrix} 3 \\ 3 \end{pmatrix} \\
+	\Sigma &= 
+	\begin{pmatrix}
+		2 & 0 \\
+		0 & 2 \\
+	\end{pmatrix} \\
+\end{aligned}
+\]
+
+Start parameters:
+\[
+\begin{aligned}
+	\mu_0 &= \begin{pmatrix} 2 \\ 2 \end{pmatrix} \\
+	\Sigma_0 &= 
+	\begin{pmatrix}
+		2 & 0 \\
+		0 & 1 \\
+	\end{pmatrix} \\
+\end{aligned}
+\]
+
+
+\subsection{Gaussian Mixture Model}
+Target parameters:
+\[
+\begin{aligned}
+	&\mu_1 = \begin{pmatrix} 2 \\ 2 \end{pmatrix}  &\hspace{20pt}  &\mu_2 = \begin{pmatrix} -1 \\ -1 \end{pmatrix} \\
+	&\Sigma_1 = 
+	\begin{pmatrix}
+		2 & 0 \\
+		0 & 2 \\
+	\end{pmatrix} 
+	&\hspace{20pt}
+	&\Sigma_2 = 
+	\begin{pmatrix}
+		1 & 0 \\
+		0 & 1 \\
+	\end{pmatrix} \\
+\end{aligned}
+\]
+with weights $(w_1, w_2) = ( 0.2, 0.8 )$
+
+Start parameters:
+\[
+\begin{aligned}
+	&\mu_1^0 = \begin{pmatrix} 3 \\ 3 \end{pmatrix}  &\hspace{20pt}  &\mu_2^0 = \begin{pmatrix} 1 \\ 0 \end{pmatrix} \\
+	&\Sigma_1^0 = 
+	\begin{pmatrix}
+		3 & 0 \\
+		0 & 1 \\
+	\end{pmatrix} 
+	&\hspace{20pt}
+	&\Sigma_2^0 = 
+	\begin{pmatrix}
+		2 & 0 \\
+		0 & 2 \\
+	\end{pmatrix} \\
+\end{aligned}
+\]
+with weights $(w_1, w_2) = ( 0.5, 0.5 )$
+
+
+\subsection{Univariate Polynomial}
+Target parameters:
+\[
+	\bm{w} = (w_1, w_2, w_3, w_4) = ( -1.2, -0.7, 2, 1 )
+\]
+Start parameters:
+\[
+	\bm{w} = (w_1, w_2, w_3, w_4) = ( 1, 1, 1, 1 )
+\]
+
+
+
+\begin{comment}
+
+
+\subsection{Univariate Polynomial}
+ULA epsilon = 1e-1 -> NaN cascade
+ULA epsilon = 1e-4 -> NaN cascade
+
+%----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 While there is a lot of theory developed for stochastic processes, 
 the complexity contributed by the components of the learning procedure makes it very hard to derive the parameter process analytically.
 Even assuming that the samplers for the model provide bona fide samples of the model distribution, 
 the randomness of the model samples and of the batch selection comes in in the form of gradients of the likelihood.
 It is then warped by the optimisation procedure, which could itself be stochastic algorithm.
 
+
 Hence there are a lot of dependencies and the evaluation here is empirical and, due to the vast space of hyper parameters and potential choices in strategy,
 necessarily not comprehensive.
 
 
-\subsection{Procedure}
+%----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+\subsection{Effect of the Sampler-Stepsize} 
 
-Since the sequence of parameter estimates at every iteration is essentially a realisation of this stochastic process, the error metrics can be viewed as one as well.
-Suppose for an experiment a full training procedure is conducted with a total number of $n$ iterations across epochs.
-Because of the stochastic nature of the training we repeat the training procedure $m$ times, with the same hyper parameters, 
-to get an impression of the parameter estimation process as a whole.
-For any error metric $M$ we then obtain a set of $m$ time series of length $n$ and can write $M_i (j)$ for the value of the metric for training run $i$ at iteration $j$.
+The more we decrease $\varepsilon$ the smaller the steps we take in the sampler iterations.
+One effect is that it is more likely to get stuck in a vast mode, depending on the distribution.
+Another effect is that we decrease the contribution of the gradient compared to the contribution of the random fluctuations.
+This is because the square root makes values significantly larger the closer $x$ is to 0.
+When considering the stochastic process, which we discretise, this makes intuitive sense.
+The more we zoom into the graph of a realisation of an Ito process, the less 'visible' the effect of the drift term becomes, 
+and the more pronounced one can observe the erratic behaviour of the Wiener process term.
 
-Now back to the idea, suppose I want to plot two types of graphs for these time series. One where we simply plot the parameter error of the different runs versus time or number of iterations. That plot would have $m$ lines, one for each training run. Next to that plot I would like to add one where I average the error over iterations, i.e. $mean_j = \sum_{i = 1}^m e_i(j)$ where $e_i(j)$ would be the error of the $i$th run at iteration $j$, and also a standard deviation, calculated in a similar way, that I would show as a grey belt around the mean (for these two types of plot I actually already have functions, but not hook classes). Now I change the set of hyperparameters (e.g. change the learning rate or the sampler) and run the experiment again for $n$ iterations and $m$ training runs. Then the I would put the same plot type as before below the previous one in the plot matrix with corresponding annotations for what changed.
+Suppose we have a distribution with very light tails and that the probability mass is concentrated in a small region, like the one induced by the polynomial energy, 
+and that our chain happens to be close to the boundary of the complement of that region in which the energy increases very strongly.
+If we choose a large step size the gradient dominates and the steps are big, potentially overcorrecting and moving the chain into a region with very high energy.
+But if we choose the step size too low, the stochastic term dominates and can randomly push the chain into a region with very high energy again.
+Intuitively this is the reason why the ULA sampler can easily diverge, both for too large and too low step sizes.
+\end{comment}
+
+
+
+
+
+
+
+
+
+
+
+
+

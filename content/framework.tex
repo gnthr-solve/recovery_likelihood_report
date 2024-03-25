@@ -67,15 +67,6 @@ The major benefits of this approach are that, for one any model can be adapted d
 and that after training the actual model can simply be retrieved from within the adapter and the adapter can be discarded without the need for transformation.
 
 
-The ADAM optimiser (cite) used here involves the learning rate $\alpha$ in form of a coefficient in front of a linearly transformed form gradient
-\[
-	\bm{\theta}_{k+1} = \bm{\theta}_k - \alpha f( \nabla_{\bm{\theta}} \text{NLL}(\bm{\theta}_k) )
-\]
-
-and as we use $\frac{1}{n} \nabla_{\bm{\theta}} \text{NLL}(\bm{\theta}_k)$ the de-facto learning rate changes with the batch size, 
-from $\alpha$ to something like $\frac{\alpha}{n}$.
-So the recommended default learning rate of $\alpha = 10^{-3}$ should be multiplied by the batch size i.e. we use $\alpha = n 10^{-3}$
-
 
 
 

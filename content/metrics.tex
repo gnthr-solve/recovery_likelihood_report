@@ -17,10 +17,23 @@ of both the quality of the final estimates and the reliability of the approach.
 
 
 \subsection{Metrics for Estimated Parameters}
-For comparing the quality of the estimates we can look for one at metrics of the distance between the known parameters and the estimated parameters.
-This gives a measure of how good the respective approach is at estimating the parameters accurately and would be specifically important in contexts, 
+
+Many metrics could be used to evaluate the quality of the estimates, but for simplicity, 
+here only some simple metrics of the distance between the known parameters and the estimated parameters are employed.
+For vector valued parameters $\bm{\theta} \in \mathbb{R}^m$ the $p$-norm family, and specifically the euclidian norm is used i.e.
+\[
+	\text{error}_p (\bm{\theta}, \hat{\bm{\theta}}) = \norm[p]{ \bm{\theta} - \hat{\bm{\theta}} } = \left(\sum_{i=1}^m (\theta_i - \hat{\theta}_i)^p \right)^{ \frac{1}{p} }
+\]
+
+while for matrix valued parameters, like e.g. the covariance matrices of the Gaussian model, the Frobenius norm of the difference is applied
+\[
+	\text{error} (\bm{\theta}, \hat{\bm{\theta}}) = \norm[F]{ \bm{\theta} - \hat{\bm{\theta}} } 
+	= \left(\sum_{i=1}^m \sum_{j=1}^n (\theta_{i j} - \hat{\theta}_{i j})^2 \right)^{ \frac{1}{2} }
+\]
+
+These give a measure of how good the respective approach is at estimating the parameters accurately and would be specifically important in contexts, 
 where the parameters have a specific meaning and the estimates are meant to be interpretable.
-For this vector norms from the $p$-norm family or matrix norms like the operator- or Frobenius-norm are suitable.
+
 
 
 

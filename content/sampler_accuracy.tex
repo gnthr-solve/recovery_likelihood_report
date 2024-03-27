@@ -1,0 +1,26 @@
+
+\subsection{Sampling Accuracy}
+
+It is important to note here that in practice we can not run the corresponding algorithm for an indefinite amount of time.
+A sampler based on MALA, ULA or HMC is used for generating training samples from the parametric model.
+
+Typically one either just takes the first $m$ samples in the chains, or lets the sampler run for some $K$ iterations before taking the subsequent samples.
+That $K$ is often called burn-in period and can improve the quality of the samples at the cost of more computation time.
+
+When cutting a samplers chains off we incur two fundamental errors. 
+The first is the error due to the discretisation of the process that is using $\hat{\bm{X}}_t$ instead of the true $\bm{X}_t$.
+It depends on the discretisation step $\varepsilon$ and is meant to be counteracted by the Metropolis Hastings acceptance step in MALA.
+We are interested in strong convergence here and we know that the convergence order of the Euler-Maruyama discretisation is proportional to $\sqrt{\varepsilon}$.
+For ULA this is significantly more important as the quality of the samples suffers directly, 
+while for MALA a poorly chosen $\varepsilon$ means that less new samples will be accepted which can either impact quality or computational effort.
+
+The second error is due to incomplete convergence, i.e. even if we could sample from $\bm{X}_t$ directly,
+we only have a guarantee that $\bm{X}$ converges to the target distribution in the limit, 
+but might not resemble it closely enough at a specific $t$.
+One could run convergence diagnostics like the Gelman-Rubin test to assess the convergence status.
+That would introduce computational overhead however and complicate the code.
+Another option is to set a specific burn-in period and hope for sufficient convergence.
+
+
+
+

@@ -18,7 +18,7 @@ where $Z_{\bm{\theta}} = \int \exp( - U_{\bm{\theta}} (\bm{x}) ) \dif \bm{x}$ is
 
 
 
-\subsection{Tranformation}
+\subsection{Transformation}
 Any standard distribution for a random variable or vector $\bm{X} : \Omega \to \mathbb{R}^d$ with a continuous density $f_{\bm{X}}$ can be transformed into an EBM.
 For this, an analytical representation of the probability kernel $K_{\bm{X}}$ of the distribution, i.e. the un-normalised version of the density, is already sufficient, 
 making it an excellent tool for Bayesian models where the normalisation constant of the posterior is typically analytically unavailable or intractable.
@@ -37,22 +37,6 @@ which reproduces the desired density when substituted in the EBMs density form:
 	&= \frac{1}{ \int K_{\bm{X}} (\bm{x}) \dif \bm{x} } K_{\bm{X}} (\bm{x}) \\
 	&= f_{\bm{X}} (\bm{x}) \\
 \end{aligned}
-\]
-
-We might not have an analytical representation for density or kernel but only a way of calculating the density value.
-For analytical consideration it is helpful to be able to still have a representation for the energy functional.
-We know that for a model with parameterised density $p_{\bm{\theta}}$ we have
-\[
-\begin{aligned}
-	- \log p_{\bm{\theta}} (\bm{x}) 
-	&= - \log \frac{ K_{\bm{\theta}} (\bm{x}) }{ Z_{\bm{\theta}} } \\
-	&= - \log K_{\bm{\theta}} (\bm{x}) + \log Z_{\bm{\theta}}  \\
-\end{aligned}
-\]
-
-so we can represent the energy functional as
-\[
-	U_{\bm{\theta}} (\bm{x}) = - \log p_{\bm{\theta}} (\bm{x}) - \log Z_{\bm{\theta}}
 \]
 
 
@@ -79,6 +63,28 @@ and analogously for $\bm{\theta}$:
 	\nabla_{\bm{\theta}} U_{\bm{\theta}} (\bm{x}) = - \frac{ \nabla_{\bm{\theta}} K_{\bm{\theta}} (\bm{x}) }{ K_{\bm{\theta}} (\bm{x}) }.
 \]
 
+
+
+
+\begin{comment}
+%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+We might not have an analytical representation for density or kernel but only a way of calculating the density value.
+For analytical consideration it is helpful to be able to still have a representation for the energy functional.
+We know that for a model with parameterised density $p_{\bm{\theta}}$ we have
+\[
+\begin{aligned}
+	- \log p_{\bm{\theta}} (\bm{x}) 
+	&= - \log \frac{ K_{\bm{\theta}} (\bm{x}) }{ Z_{\bm{\theta}} } \\
+	&= - \log K_{\bm{\theta}} (\bm{x}) + \log Z_{\bm{\theta}}  \\
+\end{aligned}
+\]
+
+so we can represent the energy functional as
+\[
+	U_{\bm{\theta}} (\bm{x}) = - \log p_{\bm{\theta}} (\bm{x}) - \log Z_{\bm{\theta}}
+\]
+
+%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 In the other case where we don't have the kernel explicitly the calculation is similar with respect to $\bm{x}$ as the normalisation constant falls away
 \[
 \begin{aligned}
@@ -102,6 +108,7 @@ but more difficult when differentiating with respect to $\bm{\theta}$ as $Z_{\bm
 
 
 
+\end{comment}
 
 
 

@@ -1,5 +1,21 @@
 
 \section{Discussion}
-
+warm up period
 Samplers could implement $\varepsilon$ schedule, potentially improving especially ULA
 Perturbation variance schedule
+
+
+\subsection{Framework}
+During the course of this project the framework grew organically with some major milestones along the way being the creation of the multi-chain samplers, 
+the base class for the energy models and the implementation of the recovery adapter and the training observers.
+
+Many of the created components turned out well and reusable but there is a lot of room for extension and potential improvement in the pipeline.
+As the issues and findings discussed in the results section show, the samplers could profit significantly from introducing an $\varepsilon$ schedule.
+By setting the initial $\varepsilon$ high and decreasing it in later epochs, one could avoid the problem of steep gradients in the beginning,
+and at the same time approximate the model distribution better in the later stages, when an overall burnin of the chains has taken place.
+
+Another way to counteract the initially poor representation of the model distribution would be to introduce a warmup burnin, before the actual training procedure starts.
+This would allow using even a poorly chosen start batch with lower burnin periods during the training.
+
+Similarly it could make sense to introduce a schedule for the perturbation variance as well.
+

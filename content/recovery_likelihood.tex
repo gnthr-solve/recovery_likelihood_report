@@ -58,8 +58,13 @@ Thus upon differentiating by $\theta$ we have
 \]
 
 So the gradients of RLL and standard LL coincide. 
-This means we can sample from  the perturbed distribution $p_{\bm{\theta}}(\bm{x} | \tilde{\bm{x}})$, which is less multimodal and hence easier to sample from.
+This means we can sample from the conditional distribution $p_{\bm{\theta}}(\bm{x} | \tilde{\bm{x}})$, which is less multimodal.
+Indeed Gao and Song have shown that for small $\sigma$ the conditional can be approximated by a normal distribution,
+\[
+	p_{\bm{\theta}}(\bm{x} | \tilde{\bm{x}}) \doteq \mathcal{N} \left( \bm{x} | \tilde{\bm{x}} - \sigma^2 \nabla_{\bm{x}} U_{\bm{\theta}} (\tilde{\bm{x}}) , \sigma^2 I \right)
+\]
 
+so the smaller we choose $\sigma$, the more the conditional resembles a shifted normal distribution, which is much easier to sample from.
 When we use the previously introduced Markov chain samplers we can treat the perturbed distribution like another EBM model with conditional energy functional
 \[
 	\tilde{U}_{\bm{\theta}} (\bm{x}) = U_{\bm{\theta}} (\bm{x}) + \frac{ \norm{\tilde{\bm{x}} - \bm{x}}^2 }{ 2 \sigma^2 }

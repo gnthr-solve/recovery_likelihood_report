@@ -3,7 +3,7 @@
 Energy based models are widely used in statistical learning and can also be found as elegant models of spatial interactions in point process models. 
 However, maximum likelihood (ML) based inference usually remains challenging due to the difficulty in approximating the partition function using Markov Chain Monte Carlo (MCMC) for high- dimensional multimodal distributions.
 
-Following the work of Gao and Song(\cite{Gao-Song2020}), the goal of this project is to explore the efficacy and efficiency of recovery likelihood estimation in learning parametrised models.
+Following the work of Gao and Song (\cite{Gao-Song2020}), the goal of this project is to explore the efficacy and efficiency of recovery likelihood estimation in learning parametrised models.
 The RL approach is based on applying Gaussian noise to the training data and subsequently using the conditional instead of the marginal distribution.
 We will shown that this approach yields an unbiased estimator of the underlying parameters and investigate the MCMC sampling properties. 
 
@@ -11,7 +11,7 @@ As the inference process depends on many components and hyperparameters, compari
 Depending on the training data, the model used, the sampling approach and components like the optimiser, the results might be different.
 Thus a large part of this project was dedicated to develop a general code framework that allows for more systematic testing in a setting of interest.
 
- have shown that RL produces good results and computational savings in the context of image generation.
+Gao and Song have shown that RL produces good results and computational savings in the context of image generation.
 In that context and many others the models are typically some variety of neural networks.
 For neural network architectures the concrete values of the weights and biases are less significant, 
 and two architectures with fundamentally different parameter values can still produce similar distributions.
@@ -21,7 +21,7 @@ but also that the parameters themselves are estimated accurately.
 The later comparisons will hence focus primarily on how well the estimated parameters match the distribution parameters.
 
 \subsection{Problem Formulation}
-The problem that is investigated in statistical learning of generative models looks like this:
+The problem that is investigated in statistical learning looks like this:
 We have a dataset $\mathcal{D} = (\bm{x}_i)_{i = 1}^n \subseteq \mathbb{R}^d$ from an unknown distribution of a random vector $\bm{X} : \Omega \to \mathbb{R}^d$,
 with some probability density function $p : \mathbb{R}^d \to \mathbb{R}$.
 We want to use the data to approximate this density function with a parametrised model density function $p_{\bm{\theta}}: \mathbb{R}^d \to \mathbb{R}$,
